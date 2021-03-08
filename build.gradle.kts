@@ -13,4 +13,6 @@ dependencies {
   implementation("org.springframework:spring-jms")
   implementation(platform("com.amazonaws:aws-java-sdk-bom:1.11.959"))
   implementation("com.amazonaws:amazon-sqs-java-messaging-lib:1.0.8")
+
+  testImplementation("org.awaitility:awaitility-kotlin:4.0.3")
 }
