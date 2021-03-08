@@ -4,3 +4,9 @@ server:
 management.endpoint:
   health.cache.time-to-live: 0
   info.cache.time-to-live: 0
+
+aws:
+  provider: localstack
+
+sqs:
+  endpoint.url: http://localhost:4576
