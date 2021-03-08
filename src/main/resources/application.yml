@@ -49,3 +49,14 @@ management:
     info:
       cache:
         time-to-live: 2000ms
+
+
+aws:
+  provider: aws
+  region: eu-west-2
+
+sqs:
+  provider: ${aws.provider}
+  queue.name: hmpps_registers_to_nomis_queue
+  dlq.name: hmpps_registers_to_nomis_dlq
+  endpoint.region: ${aws.region}
