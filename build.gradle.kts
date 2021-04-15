@@ -13,6 +13,11 @@ dependencies {
   implementation("org.springframework:spring-jms")
   implementation(platform("com.amazonaws:aws-java-sdk-bom:1.11.991"))
   implementation("com.amazonaws:amazon-sqs-java-messaging-lib:1.0.8")
+  implementation("org.springframework.boot:spring-boot-starter-security")
+  implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
+  implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
+
+//  implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.1.0")
 
   testImplementation("org.awaitility:awaitility-kotlin:4.0.3")
 }

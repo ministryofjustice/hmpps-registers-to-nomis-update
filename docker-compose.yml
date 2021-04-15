@@ -12,23 +12,23 @@ services:
     environment:
       - SERVER_PORT=8080
       - SPRING_PROFILES_ACTIVE=dev
-localstack:
-  image: localstack/localstack:0.11.2
-  networks:
-    - hmpps
-  container_name: localstack
-  ports:
-    - "4566-4597:4566-4597"
-    - 8999:8080
-  environment:
-    - SERVICES=sqs,sns
-    - DEBUG=${DEBUG- }
-    - DOCKER_HOST=unix:///var/run/docker.sock
-    - DEFAULT_REGION=eu-west-2
-  volumes:
-    - "${TMPDIR:-/tmp/localstack}:/tmp/localstack"
-    - "/var/run/docker.sock:/var/run/docker.sock"
-    - $PWD/src/test/resources/localstack:/docker-entrypoint-initaws.d
+  localstack:
+    image: localstack/localstack:0.11.2
+    networks:
+      - hmpps
+    container_name: localstack
+    ports:
+      - "4566-4597:4566-4597"
+      - 8999:8080
+    environment:
+      - SERVICES=sqs,sns
+      - DEBUG=${DEBUG- }
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - DEFAULT_REGION=eu-west-2
+    volumes:
+      - "${TMPDIR:-/tmp/localstack}:/tmp/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - $PWD/src/test/resources/localstack:/docker-entrypoint-initaws.d
 
 networks:
   hmpps:

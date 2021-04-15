@@ -1,0 +1,37 @@
+{
+  "courtId": "NRTHYC",
+  "courtName": "Northampton Youth Court",
+  "type": {
+    "courtType": "YTH",
+    "courtName": "Youth Court"
+  },
+  "active": true,
+  "buildings": [
+    {
+      "id": 445,
+      "courtId": "NRTHYC",
+      "buildingName": "The Court House",
+      "street": "Campbell Square",
+      "town": "Northampton",
+      "county": "Northamptonshire",
+      "postcode": "NN1 3EB",
+      "country": "England",
+      "contacts": [
+        {
+          "id": 675,
+          "courtId": "NRTHYC",
+          "buildingId": 445,
+          "type": "TEL",
+          "detail": "01604 497000"
+        },
+        {
+          "id": 676,
+          "courtId": "NRTHYC",
+          "buildingId": 445,
+          "type": "FAX",
+          "detail": "01604 497010"
+        }
+      ]
+    }
+  ]
+}

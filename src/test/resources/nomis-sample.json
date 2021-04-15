@@ -1,0 +1,33 @@
+{
+  "agencyId": "NRTHYC",
+  "description": "Northampton Youth Court",
+  "longDescription": "Northampton Youth Court",
+  "agencyType": "CRT",
+  "active": true,
+  "addresses": [
+    {
+      "addressId": 101812,
+      "addressType": "Business Address",
+      "premise": "The Court House",
+      "street": "Campbell Square",
+      "town": "Northampton",
+      "postalCode": "NN1 3EB",
+      "country": "England",
+      "primary": true,
+      "noFixedAddress": false,
+      "startDate": "2006-01-13",
+      "phones": [
+        {
+          "phoneId": 2502,
+          "number": "01604 497000",
+          "type": "BUS"
+        },
+        {
+          "phoneId": 2761,
+          "number": "01604 497010",
+          "type": "FAX"
+        }
+      ]
+    }
+  ]
+}
