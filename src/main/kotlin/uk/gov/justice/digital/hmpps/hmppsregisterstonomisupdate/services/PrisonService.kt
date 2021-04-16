@@ -103,21 +103,21 @@ class PrisonService(@Qualifier("prisonApiWebClient") private val webClient: WebC
   }
 
   fun removeAddress(courtId: String, addressId: Long) {
-    return webClient.delete()
+     webClient.delete()
       .uri("/api/agencies/${courtId}/addresses/${addressId}")
       .retrieve()
       .bodyToMono(Unit::class.java)
       .onErrorResume(WebClientResponseException::class.java) { emptyWhenNotFound(it) }
-      .block()!!
+      .block()
   }
 
   fun removePhone(courtId: String, addressId: Long, phoneId : Long) {
-    return webClient.delete()
+     webClient.delete()
       .uri("/api/agencies/${courtId}/addresses/${addressId}/phones/${phoneId}")
       .retrieve()
       .bodyToMono(Unit::class.java)
       .onErrorResume(WebClientResponseException::class.java) { emptyWhenNotFound(it) }
-      .block()!!
+      .block()
   }
 }
 
