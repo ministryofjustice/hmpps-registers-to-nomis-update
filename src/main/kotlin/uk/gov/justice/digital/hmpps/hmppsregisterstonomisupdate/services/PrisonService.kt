@@ -1,5 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.services
 
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.HttpStatus
@@ -14,6 +16,10 @@ import java.time.LocalDate
 @Service
 class PrisonService(@Qualifier("prisonApiWebClient") private val webClient: WebClient) {
 
+  companion object {
+    val log: Logger = LoggerFactory.getLogger(this::class.java)
+  }
+
   private val referenceCodes = object : ParameterizedTypeReference<List<ReferenceCode>>() {
   }
 
@@ -23,6 +29,7 @@ class PrisonService(@Qualifier("prisonApiWebClient") private val webClient: WebC
     if (exception.rawStatusCode == statusCode.value()) Mono.empty() else Mono.error(exception)
 
   fun getCourtInformation(courtId : String): Agency? {
+    log.debug ("Looking up prison court info {}", courtId)
     return webClient.get()
       .uri("/api/agencies/$courtId?withAddresses=true")
       .retrieve()
@@ -32,6 +39,7 @@ class PrisonService(@Qualifier("prisonApiWebClient") private val webClient: WebC
   }
 
   fun lookupCodeForReferenceDescriptions(domain : String, description: String, wildcard : Boolean): List<ReferenceCode> {
+    log.debug("looking up domain {} for description {}", domain, description)
     val result = webClient.get()
       .uri("/api/reference-domains/domains/$domain/reverse-lookup?description=$description&wildcard=$wildcard")
       .retrieve()
@@ -42,6 +50,7 @@ class PrisonService(@Qualifier("prisonApiWebClient") private val webClient: WebC
 
 
   fun updateCourt(updatedCourt: Agency) : Agency {
+    log.debug("Updating court information with {}", updatedCourt)
     return webClient.put()
       .uri("/api/agencies/${updatedCourt.agencyId}")
       .bodyValue(updatedCourt)
@@ -52,6 +61,7 @@ class PrisonService(@Qualifier("prisonApiWebClient") private val webClient: WebC
   }
 
   fun insertCourt(newCourt: Agency) : Agency {
+    log.debug("Inserting new court information with {}", newCourt)
     return webClient.post()
       .uri("/api/agencies")
       .bodyValue(newCourt)
@@ -63,6 +73,7 @@ class PrisonService(@Qualifier("prisonApiWebClient") private val webClient: WebC
   }
 
   fun updateAddress(courtId: String, addressDto: AddressDto) : AddressDto {
+    log.debug("Updating address information for court {} with {}", courtId, addressDto)
     return webClient.put()
       .uri("/api/agencies/${courtId}/addresses/${addressDto.addressId}")
       .bodyValue(addressDto)
@@ -73,6 +84,8 @@ class PrisonService(@Qualifier("prisonApiWebClient") private val webClient: WebC
   }
 
   fun insertAddress(courtId: String, addressDto: AddressDto) : AddressDto {
+    log.debug("Inserting address information for court {} with {}", courtId, addressDto)
+
     return webClient.post()
       .uri("/api/agencies/${courtId}/addresses")
       .bodyValue(addressDto)
@@ -83,6 +96,8 @@ class PrisonService(@Qualifier("prisonApiWebClient") private val webClient: WebC
   }
 
   fun insertPhone(courtId: String, addressId: Long, phone: Telephone): Telephone {
+    log.debug("Adding new phone detail {} for address {} in court {}", phone, addressId, courtId)
+
     return webClient.post()
       .uri("/api/agencies/${courtId}/addresses/${addressId}/phones")
       .bodyValue(phone)
@@ -93,6 +108,8 @@ class PrisonService(@Qualifier("prisonApiWebClient") private val webClient: WebC
   }
 
   fun updatePhone(courtId: String, addressId: Long, phone: Telephone): Telephone {
+    log.debug("Updating phone detail {} for address {} in court {}", phone, addressId, courtId)
+
     return webClient.put()
       .uri("/api/agencies/${courtId}/addresses/${addressId}/phones/${phone.phoneId}")
       .bodyValue(phone)
@@ -103,6 +120,7 @@ class PrisonService(@Qualifier("prisonApiWebClient") private val webClient: WebC
   }
 
   fun removeAddress(courtId: String, addressId: Long) {
+    log.debug("Removing address from court {} with id {}", courtId, addressId)
      webClient.delete()
       .uri("/api/agencies/${courtId}/addresses/${addressId}")
       .retrieve()
@@ -112,6 +130,7 @@ class PrisonService(@Qualifier("prisonApiWebClient") private val webClient: WebC
   }
 
   fun removePhone(courtId: String, addressId: Long, phoneId : Long) {
+    log.debug("Removing phone from address {} in court {} with id {}", addressId, courtId, phoneId)
      webClient.delete()
       .uri("/api/agencies/${courtId}/addresses/${addressId}/phones/${phoneId}")
       .retrieve()
@@ -120,7 +139,6 @@ class PrisonService(@Qualifier("prisonApiWebClient") private val webClient: WebC
       .block()
   }
 }
-
 
 data class Agency (
   val agencyId: String,
@@ -177,26 +195,8 @@ data class AddressDto (
   var startDate: LocalDate? = null,
   var endDate: LocalDate? = null,
   val phones: List<Telephone>? = null,
-  val comment: String? = null
+  var comment: String? = null
 ) {
-
-
-  override fun hashCode(): Int {
-    var result = addressType?.hashCode() ?: 0
-    result = 31 * result + (flat?.hashCode() ?: 0)
-    result = 31 * result + (premise?.hashCode() ?: 0)
-    result = 31 * result + (street?.hashCode() ?: 0)
-    result = 31 * result + (locality?.hashCode() ?: 0)
-    result = 31 * result + (town?.hashCode() ?: 0)
-    result = 31 * result + (postalCode?.hashCode() ?: 0)
-    result = 31 * result + (county?.hashCode() ?: 0)
-    result = 31 * result + (country?.hashCode() ?: 0)
-    result = 31 * result + primary.hashCode()
-    result = 31 * result + noFixedAddress.hashCode()
-    result = 31 * result + (startDate?.hashCode() ?: 0)
-    result = 31 * result + (endDate?.hashCode() ?: 0)
-    return result
-  }
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
@@ -204,22 +204,23 @@ data class AddressDto (
 
     other as AddressDto
 
-    if (addressType != other.addressType) return false
-    if (flat != other.flat) return false
     if (premise != other.premise) return false
     if (street != other.street) return false
     if (locality != other.locality) return false
-    if (town != other.town) return false
     if (postalCode != other.postalCode) return false
-    if (county != other.county) return false
-    if (country != other.country) return false
-    if (primary != other.primary) return false
-    if (noFixedAddress != other.noFixedAddress) return false
-    if (startDate != other.startDate) return false
-    if (endDate != other.endDate) return false
 
     return true
   }
+
+  override fun hashCode(): Int {
+    var result = premise?.hashCode() ?: 0
+    result = 31 * result + (street?.hashCode() ?: 0)
+    result = 31 * result + (locality?.hashCode() ?: 0)
+    result = 31 * result + (postalCode?.hashCode() ?: 0)
+    return result
+  }
+
+
 }
 
 

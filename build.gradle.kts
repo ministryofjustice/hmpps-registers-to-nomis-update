@@ -17,7 +17,7 @@ dependencies {
   implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
   implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
 
-//  implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.1.0")
-
+  testImplementation("org.springframework.security:spring-security-test")
+  testImplementation("com.github.tomakehurst:wiremock-standalone:2.27.2")
   testImplementation("org.awaitility:awaitility-kotlin:4.0.3")
 }
