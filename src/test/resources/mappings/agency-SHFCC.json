@@ -17,7 +17,7 @@
       "addresses": [
         {
           "addressId": 543524,
-          "addressType": "BUS",
+          "addressType": "Business Address",
           "comment": "This is a comment text",
           "country": "England",
           "county": "S.Yorkshire",

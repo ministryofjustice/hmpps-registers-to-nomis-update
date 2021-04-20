@@ -27,12 +27,12 @@ class PrisonService(@Qualifier("prisonApiWebClient") private val webClient: WebC
   fun <T> emptyWhen(exception: WebClientResponseException, statusCode: HttpStatus): Mono<T> =
     if (exception.rawStatusCode == statusCode.value()) Mono.empty() else Mono.error(exception)
 
-  fun getCourtInformation(courtId: String): Agency? {
+  fun getCourtInformation(courtId: String): CourtFromPrisonSystem? {
     log.debug("Looking up prison court info {}", courtId)
     return webClient.get()
       .uri("/api/agencies/$courtId?withAddresses=true")
       .retrieve()
-      .bodyToMono(Agency::class.java)
+      .bodyToMono(CourtFromPrisonSystem::class.java)
       .onErrorResume(WebClientResponseException::class.java) { emptyWhenNotFound(it) }
       .block()
   }
@@ -47,72 +47,72 @@ class PrisonService(@Qualifier("prisonApiWebClient") private val webClient: WebC
     return result
   }
 
-  fun updateCourt(updatedCourt: Agency): Agency {
+  fun updateCourt(updatedCourt: CourtFromPrisonSystem): CourtFromPrisonSystem {
     log.debug("Updating court information with {}", updatedCourt)
     return webClient.put()
       .uri("/api/agencies/${updatedCourt.agencyId}")
       .bodyValue(updatedCourt)
       .retrieve()
-      .bodyToMono(Agency::class.java)
+      .bodyToMono(CourtFromPrisonSystem::class.java)
       .onErrorResume(WebClientResponseException::class.java) { emptyWhenNotFound(it) }
       .block()!!
   }
 
-  fun insertCourt(newCourt: Agency): Agency {
+  fun insertCourt(newCourt: CourtFromPrisonSystem): CourtFromPrisonSystem {
     log.debug("Inserting new court information with {}", newCourt)
     return webClient.post()
       .uri("/api/agencies")
       .bodyValue(newCourt)
       .retrieve()
-      .bodyToMono(Agency::class.java)
+      .bodyToMono(CourtFromPrisonSystem::class.java)
       .onErrorResume(WebClientResponseException::class.java) { emptyWhenNotFound(it) }
       .onErrorResume(WebClientResponseException::class.java) { emptyWhenConflict(it) }
       .block()!!
   }
 
-  fun updateAddress(courtId: String, addressDto: AddressDto): AddressDto {
-    log.debug("Updating address information for court {} with {}", courtId, addressDto)
+  fun updateAddress(courtId: String, addressFromPrisonSystem: AddressFromPrisonSystem): AddressFromPrisonSystem {
+    log.debug("Updating address information for court {} with {}", courtId, addressFromPrisonSystem)
     return webClient.put()
-      .uri("/api/agencies/$courtId/addresses/${addressDto.addressId}")
-      .bodyValue(addressDto)
+      .uri("/api/agencies/$courtId/addresses/${addressFromPrisonSystem.addressId}")
+      .bodyValue(addressFromPrisonSystem)
       .retrieve()
-      .bodyToMono(AddressDto::class.java)
+      .bodyToMono(AddressFromPrisonSystem::class.java)
       .onErrorResume(WebClientResponseException::class.java) { emptyWhenNotFound(it) }
       .block()!!
   }
 
-  fun insertAddress(courtId: String, addressDto: AddressDto): AddressDto {
-    log.debug("Inserting address information for court {} with {}", courtId, addressDto)
+  fun insertAddress(courtId: String, addressFromPrisonSystem: AddressFromPrisonSystem): AddressFromPrisonSystem {
+    log.debug("Inserting address information for court {} with {}", courtId, addressFromPrisonSystem)
 
     return webClient.post()
       .uri("/api/agencies/$courtId/addresses")
-      .bodyValue(addressDto)
+      .bodyValue(addressFromPrisonSystem)
       .retrieve()
-      .bodyToMono(AddressDto::class.java)
+      .bodyToMono(AddressFromPrisonSystem::class.java)
       .onErrorResume(WebClientResponseException::class.java) { emptyWhenNotFound(it) }
       .block()!!
   }
 
-  fun insertPhone(courtId: String, addressId: Long, phone: Telephone): Telephone {
+  fun insertPhone(courtId: String, addressId: Long, phone: PhoneFromPrisonSystem): PhoneFromPrisonSystem {
     log.debug("Adding new phone detail {} for address {} in court {}", phone, addressId, courtId)
 
     return webClient.post()
       .uri("/api/agencies/$courtId/addresses/$addressId/phones")
       .bodyValue(phone)
       .retrieve()
-      .bodyToMono(Telephone::class.java)
+      .bodyToMono(PhoneFromPrisonSystem::class.java)
       .onErrorResume(WebClientResponseException::class.java) { emptyWhenNotFound(it) }
       .block()!!
   }
 
-  fun updatePhone(courtId: String, addressId: Long, phone: Telephone): Telephone {
+  fun updatePhone(courtId: String, addressId: Long, phone: PhoneFromPrisonSystem): PhoneFromPrisonSystem {
     log.debug("Updating phone detail {} for address {} in court {}", phone, addressId, courtId)
 
     return webClient.put()
       .uri("/api/agencies/$courtId/addresses/$addressId/phones/${phone.phoneId}")
       .bodyValue(phone)
       .retrieve()
-      .bodyToMono(Telephone::class.java)
+      .bodyToMono(PhoneFromPrisonSystem::class.java)
       .onErrorResume(WebClientResponseException::class.java) { emptyWhenNotFound(it) }
       .block()!!
   }
@@ -138,14 +138,14 @@ class PrisonService(@Qualifier("prisonApiWebClient") private val webClient: WebC
   }
 }
 
-data class Agency(
+data class CourtFromPrisonSystem(
   val agencyId: String,
   val description: String,
   val longDescription: String? = null,
   val agencyType: String,
   val active: Boolean,
   val deactivationDate: LocalDate? = null,
-  val addresses: List<AddressDto>? = null
+  val addresses: List<AddressFromPrisonSystem> = listOf(),
 ) {
 
   override fun hashCode(): Int {
@@ -162,7 +162,7 @@ data class Agency(
     if (this === other) return true
     if (javaClass != other?.javaClass) return false
 
-    other as Agency
+    other as CourtFromPrisonSystem
 
     if (agencyId != other.agencyId) return false
     if (description != other.description) return false
@@ -175,7 +175,7 @@ data class Agency(
   }
 }
 
-data class AddressDto(
+data class AddressFromPrisonSystem(
   var addressId: Long? = null,
   val addressType: String? = "BUS",
   val flat: String? = null,
@@ -190,7 +190,7 @@ data class AddressDto(
   val noFixedAddress: Boolean,
   var startDate: LocalDate? = null,
   var endDate: LocalDate? = null,
-  val phones: List<Telephone>? = null,
+  val phones: List<PhoneFromPrisonSystem> = listOf(),
   var comment: String? = null
 ) {
 
@@ -198,7 +198,7 @@ data class AddressDto(
     if (this === other) return true
     if (javaClass != other?.javaClass) return false
 
-    other as AddressDto
+    other as AddressFromPrisonSystem
 
     if (premise != other.premise) return false
     if (street != other.street) return false
@@ -217,7 +217,8 @@ data class AddressDto(
   }
 }
 
-data class Telephone(
+
+data class PhoneFromPrisonSystem(
   var phoneId: Long? = null,
   val number: String,
   val type: String,
@@ -235,7 +236,7 @@ data class Telephone(
     if (this === other) return true
     if (javaClass != other?.javaClass) return false
 
-    other as Telephone
+    other as PhoneFromPrisonSystem
 
     if (number != other.number) return false
     if (type != other.type) return false
@@ -251,4 +252,24 @@ data class ReferenceCode(
   val description: String,
   val activeFlag: String,
   val expiredDate: LocalDate? = null
-)
+) {
+  override fun hashCode(): Int {
+    var result = domain.hashCode()
+    result = 31 * result + code.hashCode()
+    result = 31 * result + description.hashCode()
+    return result
+  }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (javaClass != other?.javaClass) return false
+
+    other as ReferenceCode
+
+    if (domain != other.domain) return false
+    if (code != other.code) return false
+    if (description != other.description) return false
+
+    return true
+  }
+}
