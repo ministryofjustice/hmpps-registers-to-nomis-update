@@ -40,6 +40,7 @@ class CourtRegisterUpdateService(
       log.debug("Found prison data version of court {}", legacyCourtInfo)
 
       storeInPrisonData(legacyCourtInfo, mergeIds(convertToPrisonCourtData, legacyCourtInfo))
+      log.debug("Update Completed")
     }
   }
 

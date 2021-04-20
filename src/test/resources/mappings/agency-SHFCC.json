@@ -1,0 +1,44 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/api/agencies/SHFCC"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "agencyId": "SHFCC",
+      "agencyType": "CRT",
+      "description": "Sheffield Crown Court",
+      "longDescription": "Sheffield Crown Court",
+      "active": true,
+      "addresses": [
+        {
+          "addressId": 543524,
+          "addressType": "BUS",
+          "comment": "This is a comment text",
+          "country": "England",
+          "county": "S.Yorkshire",
+          "flat": "3B",
+          "premise": "Sheffield Court",
+          "locality": "Brincliffe",
+          "street": "Slinn Street",
+          "town": "Sheffield",
+          "postalCode": "LI1 5TH",
+          "primary": true,
+          "noFixedAddress": false,
+          "startDate": "2005-05-12",
+          "phones": [
+            {
+              "phoneId": 2234232,
+              "number": "0114 2345678",
+              "type": "TEL"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

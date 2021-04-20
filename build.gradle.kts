@@ -20,4 +20,5 @@ dependencies {
   testImplementation("org.springframework.security:spring-security-test")
   testImplementation("com.github.tomakehurst:wiremock-standalone:2.27.2")
   testImplementation("org.awaitility:awaitility-kotlin:4.0.3")
+  testImplementation("io.jsonwebtoken:jjwt:0.9.1")
 }

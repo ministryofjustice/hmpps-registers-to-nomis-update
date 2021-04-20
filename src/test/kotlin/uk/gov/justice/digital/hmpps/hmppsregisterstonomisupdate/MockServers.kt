@@ -7,7 +7,7 @@ import com.github.tomakehurst.wiremock.http.HttpHeader
 import com.github.tomakehurst.wiremock.http.HttpHeaders
 import com.google.gson.GsonBuilder
 
-private const val MAPPINGS_DIRECTORY = "src/testIntegration/resources"
+private const val MAPPINGS_DIRECTORY = "src/test/resources"
 
 open class MockServer(port: Int) : WireMockServer(
   WireMockConfiguration.wireMockConfig()

@@ -1,0 +1,20 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/api/reference-domains/domains/COUNTRY/reverse-lookup"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": [
+      {
+        "code": "ENG",
+        "description": "England",
+        "domain": "COUNTRY",
+        "activeFlag": "Y"
+      }
+    ]
+  }
+}
