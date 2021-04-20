@@ -21,7 +21,7 @@ class ResourceServerConfiguration : WebSecurityConfigurerAdapter() {
           "/favicon.ico",
           "/health/**", "/info", "/ping"
         )
-        .permitAll().anyRequest().authenticated()
+          .permitAll().anyRequest().authenticated()
       }.oauth2ResourceServer().jwt().jwtAuthenticationConverter(AuthAwareTokenConverter())
   }
 }

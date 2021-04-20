@@ -1,7 +1,5 @@
 package uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.config
 
-import org.springframework.context.annotation.Configuration
-
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonDeserializationContext
@@ -11,6 +9,7 @@ import com.google.gson.JsonPrimitive
 import com.google.gson.JsonSerializationContext
 import com.google.gson.JsonSerializer
 import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
 import java.lang.reflect.Type
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter

@@ -33,4 +33,3 @@ constructor(@Qualifier("courtRegisterHealthWebClient") webClient: WebClient) : H
 @Component
 class OAuthApiHealth
 constructor(@Qualifier("oauthApiHealthWebClient") webClient: WebClient) : HealthCheck(webClient)
-

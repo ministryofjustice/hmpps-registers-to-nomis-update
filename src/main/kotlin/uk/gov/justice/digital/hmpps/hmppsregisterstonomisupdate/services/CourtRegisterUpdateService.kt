@@ -1,10 +1,10 @@
 package uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.services
 
-
 import com.google.gson.Gson
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
 import org.springframework.http.HttpStatus.NOT_FOUND
 import org.springframework.stereotype.Service
@@ -18,6 +18,7 @@ import java.time.LocalDate
 class CourtRegisterUpdateService(
   @Qualifier("courtRegisterApiWebClient") private val webClient: WebClient,
   private val prisonService: PrisonService,
+  @Value("\${registertonomis.apply-changes}") private val applyChanges: Boolean,
   private val gson: Gson
 ) {
   companion object {
@@ -39,18 +40,18 @@ class CourtRegisterUpdateService(
       val legacyCourtInfo = prisonService.getCourtInformation(court.courtId)
       log.debug("Found prison data version of court {}", legacyCourtInfo)
 
-      storeInPrisonData(legacyCourtInfo, mergeIds(convertToPrisonCourtData, legacyCourtInfo))
+      storeInPrisonData(legacyCourtInfo, mergeIds(convertToPrisonCourtData, legacyCourtInfo), applyChanges)
       log.debug("Update Completed")
     }
   }
 
-  private fun storeInPrisonData(legacyCourtInfo: Agency?, court: Agency, applyChanges : Boolean = false) {
+  private fun storeInPrisonData(legacyCourtInfo: Agency?, court: Agency, applyChanges: Boolean = false) {
 
     if (applyChanges) {
       if (legacyCourtInfo == null) {
         prisonService.insertCourt(court)
       } else {
-        if (court != legacyCourtInfo) {  // don't update if equal
+        if (court != legacyCourtInfo) { // don't update if equal
           prisonService.updateCourt(court)
         }
       }
@@ -91,7 +92,7 @@ class CourtRegisterUpdateService(
         }
       }
 
-      //update phones
+      // update phones
       address.phones?.forEach { phone ->
         log.info("Process Phone {}", phone)
         if (applyChanges) {
@@ -128,11 +129,11 @@ class CourtRegisterUpdateService(
         updateAddressAndPhone(primaryAddress)
       }
     }
-    return updatedCourtData;
+    return updatedCourtData
   }
 
   private fun AddressDto.updateAddressAndPhone(
-      primaryAddress: AddressDto
+    primaryAddress: AddressDto
   ) {
     primaryAddress.addressId = addressId
     primaryAddress.primary = primary
@@ -182,7 +183,8 @@ class CourtRegisterUpdateService(
           comment = "Updated from Court Register",
           phones = building.contacts?.map { phone ->
             Telephone(null, phone.detail, if (phone.type == "TEL") "BUS" else phone.type, null)
-          })
+          }
+        )
       }
     )
 
@@ -245,5 +247,3 @@ data class ContactDto(
   val type: String,
   val detail: String
 )
-
-

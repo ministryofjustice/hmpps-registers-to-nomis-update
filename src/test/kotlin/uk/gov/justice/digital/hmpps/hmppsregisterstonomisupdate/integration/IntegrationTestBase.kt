@@ -37,7 +37,6 @@ abstract class IntegrationTestBase {
   @Autowired
   lateinit var webTestClient: WebTestClient
 
-
   companion object {
     val prisonMockServer = PrisonMockServer()
     internal val oauthMockServer = OAuthMockServer()
@@ -52,7 +51,6 @@ abstract class IntegrationTestBase {
       courtRegisterServer.start()
 
       oauthMockServer.stubGrantToken()
-
     }
 
     @Suppress("unused")
@@ -93,5 +91,4 @@ abstract class IntegrationTestBase {
     user: String = "hr2nu-client",
     roles: List<String> = listOf()
   ): (HttpHeaders) -> Unit = jwtAuthHelper.setAuthorisation(user, roles)
-
 }

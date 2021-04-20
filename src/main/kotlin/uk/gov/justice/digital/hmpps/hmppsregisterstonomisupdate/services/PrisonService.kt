@@ -12,7 +12,6 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import reactor.core.publisher.Mono
 import java.time.LocalDate
 
-
 @Service
 class PrisonService(@Qualifier("prisonApiWebClient") private val webClient: WebClient) {
 
@@ -28,8 +27,8 @@ class PrisonService(@Qualifier("prisonApiWebClient") private val webClient: WebC
   fun <T> emptyWhen(exception: WebClientResponseException, statusCode: HttpStatus): Mono<T> =
     if (exception.rawStatusCode == statusCode.value()) Mono.empty() else Mono.error(exception)
 
-  fun getCourtInformation(courtId : String): Agency? {
-    log.debug ("Looking up prison court info {}", courtId)
+  fun getCourtInformation(courtId: String): Agency? {
+    log.debug("Looking up prison court info {}", courtId)
     return webClient.get()
       .uri("/api/agencies/$courtId?withAddresses=true")
       .retrieve()
@@ -38,7 +37,7 @@ class PrisonService(@Qualifier("prisonApiWebClient") private val webClient: WebC
       .block()
   }
 
-  fun lookupCodeForReferenceDescriptions(domain : String, description: String, wildcard : Boolean): List<ReferenceCode> {
+  fun lookupCodeForReferenceDescriptions(domain: String, description: String, wildcard: Boolean): List<ReferenceCode> {
     log.debug("looking up domain {} for description {}", domain, description)
     val result = webClient.get()
       .uri("/api/reference-domains/domains/$domain/reverse-lookup?description=$description&wildcard=$wildcard")
@@ -48,8 +47,7 @@ class PrisonService(@Qualifier("prisonApiWebClient") private val webClient: WebC
     return result
   }
 
-
-  fun updateCourt(updatedCourt: Agency) : Agency {
+  fun updateCourt(updatedCourt: Agency): Agency {
     log.debug("Updating court information with {}", updatedCourt)
     return webClient.put()
       .uri("/api/agencies/${updatedCourt.agencyId}")
@@ -60,7 +58,7 @@ class PrisonService(@Qualifier("prisonApiWebClient") private val webClient: WebC
       .block()!!
   }
 
-  fun insertCourt(newCourt: Agency) : Agency {
+  fun insertCourt(newCourt: Agency): Agency {
     log.debug("Inserting new court information with {}", newCourt)
     return webClient.post()
       .uri("/api/agencies")
@@ -72,10 +70,10 @@ class PrisonService(@Qualifier("prisonApiWebClient") private val webClient: WebC
       .block()!!
   }
 
-  fun updateAddress(courtId: String, addressDto: AddressDto) : AddressDto {
+  fun updateAddress(courtId: String, addressDto: AddressDto): AddressDto {
     log.debug("Updating address information for court {} with {}", courtId, addressDto)
     return webClient.put()
-      .uri("/api/agencies/${courtId}/addresses/${addressDto.addressId}")
+      .uri("/api/agencies/$courtId/addresses/${addressDto.addressId}")
       .bodyValue(addressDto)
       .retrieve()
       .bodyToMono(AddressDto::class.java)
@@ -83,11 +81,11 @@ class PrisonService(@Qualifier("prisonApiWebClient") private val webClient: WebC
       .block()!!
   }
 
-  fun insertAddress(courtId: String, addressDto: AddressDto) : AddressDto {
+  fun insertAddress(courtId: String, addressDto: AddressDto): AddressDto {
     log.debug("Inserting address information for court {} with {}", courtId, addressDto)
 
     return webClient.post()
-      .uri("/api/agencies/${courtId}/addresses")
+      .uri("/api/agencies/$courtId/addresses")
       .bodyValue(addressDto)
       .retrieve()
       .bodyToMono(AddressDto::class.java)
@@ -99,7 +97,7 @@ class PrisonService(@Qualifier("prisonApiWebClient") private val webClient: WebC
     log.debug("Adding new phone detail {} for address {} in court {}", phone, addressId, courtId)
 
     return webClient.post()
-      .uri("/api/agencies/${courtId}/addresses/${addressId}/phones")
+      .uri("/api/agencies/$courtId/addresses/$addressId/phones")
       .bodyValue(phone)
       .retrieve()
       .bodyToMono(Telephone::class.java)
@@ -111,7 +109,7 @@ class PrisonService(@Qualifier("prisonApiWebClient") private val webClient: WebC
     log.debug("Updating phone detail {} for address {} in court {}", phone, addressId, courtId)
 
     return webClient.put()
-      .uri("/api/agencies/${courtId}/addresses/${addressId}/phones/${phone.phoneId}")
+      .uri("/api/agencies/$courtId/addresses/$addressId/phones/${phone.phoneId}")
       .bodyValue(phone)
       .retrieve()
       .bodyToMono(Telephone::class.java)
@@ -121,18 +119,18 @@ class PrisonService(@Qualifier("prisonApiWebClient") private val webClient: WebC
 
   fun removeAddress(courtId: String, addressId: Long) {
     log.debug("Removing address from court {} with id {}", courtId, addressId)
-     webClient.delete()
-      .uri("/api/agencies/${courtId}/addresses/${addressId}")
+    webClient.delete()
+      .uri("/api/agencies/$courtId/addresses/$addressId")
       .retrieve()
       .bodyToMono(Unit::class.java)
       .onErrorResume(WebClientResponseException::class.java) { emptyWhenNotFound(it) }
       .block()
   }
 
-  fun removePhone(courtId: String, addressId: Long, phoneId : Long) {
+  fun removePhone(courtId: String, addressId: Long, phoneId: Long) {
     log.debug("Removing phone from address {} in court {} with id {}", addressId, courtId, phoneId)
-     webClient.delete()
-      .uri("/api/agencies/${courtId}/addresses/${addressId}/phones/${phoneId}")
+    webClient.delete()
+      .uri("/api/agencies/$courtId/addresses/$addressId/phones/$phoneId")
       .retrieve()
       .bodyToMono(Unit::class.java)
       .onErrorResume(WebClientResponseException::class.java) { emptyWhenNotFound(it) }
@@ -140,16 +138,15 @@ class PrisonService(@Qualifier("prisonApiWebClient") private val webClient: WebC
   }
 }
 
-data class Agency (
+data class Agency(
   val agencyId: String,
   val description: String,
   val longDescription: String? = null,
   val agencyType: String,
-  val active : Boolean,
+  val active: Boolean,
   val deactivationDate: LocalDate? = null,
   val addresses: List<AddressDto>? = null
 ) {
-
 
   override fun hashCode(): Int {
     var result = agencyId.hashCode()
@@ -178,8 +175,7 @@ data class Agency (
   }
 }
 
-
-data class AddressDto (
+data class AddressDto(
   var addressId: Long? = null,
   val addressType: String? = "BUS",
   val flat: String? = null,
@@ -219,18 +215,14 @@ data class AddressDto (
     result = 31 * result + (postalCode?.hashCode() ?: 0)
     return result
   }
-
-
 }
 
-
-data class Telephone (
+data class Telephone(
   var phoneId: Long? = null,
   val number: String,
   val type: String,
   val ext: String? = null
 ) {
-
 
   override fun hashCode(): Int {
     var result = number.hashCode()
@@ -253,11 +245,10 @@ data class Telephone (
   }
 }
 
-
-data class ReferenceCode (
-   val domain: String,
-   val code: String,
-   val description: String,
-   val activeFlag: String,
-   val expiredDate: LocalDate? = null
+data class ReferenceCode(
+  val domain: String,
+  val code: String,
+  val description: String,
+  val activeFlag: String,
+  val expiredDate: LocalDate? = null
 )

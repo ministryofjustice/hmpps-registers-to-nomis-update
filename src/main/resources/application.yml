@@ -87,3 +87,6 @@ sqs:
 
 oauth:
   token.url: ${oauth.endpoint.url}/oauth/token
+
+registertonomis:
+  apply-changes: false

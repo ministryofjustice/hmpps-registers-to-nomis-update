@@ -57,7 +57,6 @@ class WebClientConfiguration(
       .build()
   }
 
-
   @Bean
   fun courtRegisterHealthWebClient(): WebClient {
     return WebClient.builder().baseUrl(courtRegisterRootUri).build()
