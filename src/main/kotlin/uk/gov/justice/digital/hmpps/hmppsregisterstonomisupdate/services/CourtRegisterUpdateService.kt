@@ -4,6 +4,7 @@ import com.google.common.collect.MapDifference
 import com.google.common.collect.Maps
 import com.google.common.reflect.TypeToken
 import com.google.gson.Gson
+import com.microsoft.applicationinsights.TelemetryClient
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -16,6 +17,7 @@ import java.time.LocalDate
 class CourtRegisterUpdateService(
   private val courtRegisterService: CourtRegisterService,
   private val prisonService: PrisonService,
+  private val telemetryClient: TelemetryClient,
   @Value("\${registertonomis.apply-changes}") private val applyChanges: Boolean,
   private val gson: Gson
 ) {
@@ -35,19 +37,28 @@ class CourtRegisterUpdateService(
       val updatedCourtDataFromRegister = convertToPrisonCourtData(this)
       log.debug("Transformed register data to prison data format {}", updatedCourtDataFromRegister)
 
-      val currentCourtDataInPrisonSystem = prisonService.getCourtInformation(court.courtId)
+      val currentCourtDataInPrisonSystem = prisonService.getCourtInformation(courtId)
       log.debug("Found prison data version of court {}", currentCourtDataInPrisonSystem)
 
       val currentCourtDataToCompare =
         if (currentCourtDataInPrisonSystem != null) translateToSync(currentCourtDataInPrisonSystem) else null
       val newCourtData = mergeIds(updatedCourtDataFromRegister, currentCourtDataToCompare)
 
-      val diffs = checkForDifferences(gson.toJson(currentCourtDataToCompare), gson.toJson(newCourtData))
+      val diffs = checkForDifferences(currentCourtDataToCompare, newCourtData)
       if (!diffs.areEqual()) {
-        log.info("Updating Prison System with court data. Changes {}", diffs)
+        log.info("$courtId: Updating Prison System with court data. Changes {}", diffs)
+
         storeInPrisonData(currentCourtDataToCompare, newCourtData, applyChanges)
+        val trackingAttributes = mapOf(
+          "courtId" to courtId,
+          "changes" to diffs.toString(),
+          "changes-applied" to applyChanges.toString()
+        )
+        telemetryClient.trackEvent("HR2NU-Court-Change", trackingAttributes, null)
+
       } else {
-        log.info("No changes to apply")
+        log.info("$courtId: No changes to apply")
+        telemetryClient.trackEvent("HR2NU-Court-No-Change",  mapOf("courtId" to courtId), null)
       }
       return diffs
     }
@@ -63,6 +74,7 @@ class CourtRegisterUpdateService(
       null,
       courtData.addresses.map { address ->
         AddressDataToSync(
+          addressId = address.addressId,
           addressType = getRefCode("ADDR_TYPE", address.addressType),
           premise = address.premise,
           street = address.street,
@@ -77,7 +89,7 @@ class CourtRegisterUpdateService(
           endDate = address.endDate,
           comment = address.comment,
           phones = address.phones.map { phone ->
-            PhoneFromPrisonSystem(null, phone.number, phone.type, phone.ext)
+            PhoneFromPrisonSystem(phone.phoneId, phone.number, phone.type, phone.ext)
           }
         )
       }
@@ -92,9 +104,11 @@ class CourtRegisterUpdateService(
     if (applyChanges) {
       val dataPayload = translateToPrisonSystemFormat(newCourtData)
       if (currentCourtData == null) {
+        log.debug("Insert Court {}", dataPayload)
         prisonService.insertCourt(dataPayload)
       } else {
         if (newCourtData != currentCourtData) { // don't update if equal
+          log.debug("Update Court {}", dataPayload)
           prisonService.updateCourt(dataPayload)
         }
       }
@@ -109,8 +123,6 @@ class CourtRegisterUpdateService(
 
     // update addresses
     newCourtData.addresses.forEach { updatedAddress ->
-      log.info("Process Address {}", updatedAddress)
-
       val currentAddress = currentCourtData?.addresses?.find { it.addressId == updatedAddress.addressId }
 
       // remove phones from this address if not matched
@@ -129,14 +141,15 @@ class CourtRegisterUpdateService(
       // update phones
       updatedAddress.phones.forEach { phone ->
         val currentPhone = currentAddress?.phones?.find { it.phoneId == phone.phoneId }
-        log.info("Process Phone {}", phone)
         if (phone.phoneId == null) {
           if (applyChanges && updatedAddressId != null) {
+            log.debug("Insert Phone {}", phone)
             prisonService.insertPhone(newCourtData.courtId, updatedAddressId, phone)
           }
         } else {
           if (phone != currentPhone) {
             if (applyChanges && updatedAddressId != null) {
+              log.debug("Update Phone {}", phone)
               prisonService.updatePhone(newCourtData.courtId, updatedAddressId, phone)
             }
           }
@@ -145,10 +158,10 @@ class CourtRegisterUpdateService(
     }
   }
 
-  private fun checkForDifferences(existingRecord: String, newRecord: String): MapDifference<String, Any> {
-    val type: Type = object : TypeToken<Map<String?, Any?>?>() {}.type
-    val leftMap: Map<String, Any> = gson.fromJson(existingRecord, type)
-    val rightMap: Map<String, Any> = gson.fromJson(newRecord, type)
+  private fun checkForDifferences(existingRecord: CourtDataToSync?, newRecord: CourtDataToSync): MapDifference<String, Any> {
+    val type: Type = object : TypeToken<Map<String, Any>>() {}.type
+    val leftMap: Map<String, Any> = if (existingRecord != null) gson.fromJson(gson.toJson(existingRecord), type) else mapOf()
+    val rightMap: Map<String, Any> = gson.fromJson(gson.toJson(newRecord), type)
     return Maps.difference(leftMap, rightMap)
   }
 
@@ -159,15 +172,17 @@ class CourtRegisterUpdateService(
   ): Long? {
     val dataPayload = translateToPrisonSystemFormat(updatedAddress)
     if (dataPayload.addressId == null) {
+      log.debug("Insert Address {}", dataPayload)
       return prisonService.insertAddress(courtId, dataPayload).addressId
     }
 
     currentAddress.run {
       if (this != updatedAddress) {
+        log.debug("Update Address {}", dataPayload)
         return prisonService.updateAddress(courtId, dataPayload).addressId
       }
     }
-    return null
+    return dataPayload.addressId
   }
 
   private fun translateToPrisonSystemFormat(courtData: CourtDataToSync) =
@@ -214,7 +229,6 @@ class CourtRegisterUpdateService(
       val matchedAddr = legacyCourt.addresses.find { a -> a == address }
       if (matchedAddr != null) {
         with(matchedAddr) {
-          log.debug("MATCH: Court Register address {} and prison court address {}", address, this)
           updateAddressAndPhone(address)
         }
       }
@@ -241,7 +255,7 @@ class CourtRegisterUpdateService(
       null,
       courtDto.buildings.map { building ->
         AddressDataToSync(
-          addressType = getRefCode("ADDR_TYPE", "BUS"),
+          addressType = getRefCode("ADDR_TYPE", "Business Address"),
           premise = building.buildingName ?: courtDto.courtName,
           street = building.street,
           locality = building.locality,
@@ -328,18 +342,22 @@ data class AddressDataToSync(
   var comment: String? = null
 ) {
 
-  fun updateAddressAndPhone(
-    primaryAddress: AddressDataToSync
-  ) {
-    primaryAddress.addressId = addressId
-    primaryAddress.primary = primary
-    primaryAddress.startDate = startDate
-    primaryAddress.endDate = endDate
-    primaryAddress.comment = comment
-    // update the phones
-    updatePhoneIds(primaryAddress, this)
+  companion object {
+    val log: Logger = LoggerFactory.getLogger(this::class.java)
+  }
 
-    CourtRegisterUpdateService.log.debug("Updated to {}", primaryAddress)
+  fun updateAddressAndPhone(
+    address: AddressDataToSync
+  ) {
+    address.addressId = addressId
+    address.primary = primary
+    address.startDate = startDate
+    address.endDate = endDate
+    address.comment = comment
+    log.debug("MATCH: Court Register address {} and prison court address {}", address, this)
+
+    // update the phones
+    updatePhoneIds(address, this)
   }
 
   private fun updatePhoneIds(
@@ -349,12 +367,8 @@ data class AddressDataToSync(
     courtRegAddress.phones.forEach { phone ->
       val matchedPhone = legacyAddress.phones.find { p -> p == phone }
       if (matchedPhone != null) {
-        CourtRegisterUpdateService.log.debug(
-          "Court Register phone {} and prison court phone match {}",
-          phone,
-          matchedPhone
-        )
         phone.phoneId = matchedPhone.phoneId
+        log.debug("MATCH: Court Register phones {} and prison court phones {}", phone, matchedPhone)
       }
     }
   }
