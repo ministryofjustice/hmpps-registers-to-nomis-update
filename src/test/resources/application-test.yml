@@ -9,4 +9,4 @@ aws:
   provider: localstack
 
 sqs:
-  endpoint.url: http://localhost:4576
+  endpoint.url: http://localhost:4566
