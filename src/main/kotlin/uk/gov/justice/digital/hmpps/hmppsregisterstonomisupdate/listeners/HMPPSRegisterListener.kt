@@ -26,7 +26,7 @@ class HMPPSRegisterListener(
     log.info("Received message ${sqsMessage.MessageId}")
     val changeEvent: RegisterChangeEvent = gson.fromJson(sqsMessage.Message, RegisterChangeEvent::class.java)
     when (changeEvent.eventType) {
-      COURT_REGISTER_UPDATE, COURT_REGISTER_INSERT -> courtRegisterUpdateService.updateCourtDetails(CourtUpdate(courtId = changeEvent.id))
+      COURT_REGISTER_UPDATE -> courtRegisterUpdateService.updateCourtDetails(CourtUpdate(courtId = changeEvent.id))
       else -> log.info("Received a message I wasn't expected $changeEvent")
     }
   }
