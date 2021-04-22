@@ -55,10 +55,9 @@ class CourtRegisterUpdateService(
           "changes-applied" to applyChanges.toString()
         )
         telemetryClient.trackEvent("HR2NU-Court-Change", trackingAttributes, null)
-
       } else {
         log.info("$courtId: No changes to apply")
-        telemetryClient.trackEvent("HR2NU-Court-No-Change",  mapOf("courtId" to courtId), null)
+        telemetryClient.trackEvent("HR2NU-Court-No-Change", mapOf("courtId" to courtId), null)
       }
       return diffs
     }
@@ -94,7 +93,6 @@ class CourtRegisterUpdateService(
         )
       }
     )
-
 
   private fun storeInPrisonData(
     currentCourtData: CourtDataToSync?,
@@ -220,7 +218,6 @@ class CourtRegisterUpdateService(
   private fun translateToPrisonSystemFormat(addressData: AddressDataToSync) =
     addressFromPrisonSystem(addressData)
 
-
   private fun mergeIds(updatedCourtData: CourtDataToSync, legacyCourt: CourtDataToSync?): CourtDataToSync {
     if (legacyCourt == null) return updatedCourtData
 
@@ -287,7 +284,6 @@ class CourtRegisterUpdateService(
     return ref
   }
 }
-
 
 data class CourtDataToSync(
   val courtId: String,

@@ -1,7 +1,10 @@
 package uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.services
 
 import com.microsoft.applicationinsights.TelemetryClient
-import com.nhaarman.mockitokotlin2.*
+import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.eq
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.whenever
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -11,11 +14,11 @@ import java.time.LocalDate
 
 class CourtRegisterUpdateServiceTest {
 
-  private val courtRegisterService : CourtRegisterService = mock()
-  private val prisonService : PrisonService = mock()
+  private val courtRegisterService: CourtRegisterService = mock()
+  private val prisonService: PrisonService = mock()
   private val telemetryClient: TelemetryClient = mock()
 
-  private lateinit var service:  CourtRegisterUpdateService
+  private lateinit var service: CourtRegisterUpdateService
 
   @BeforeEach
   fun before() {
@@ -46,7 +49,7 @@ class CourtRegisterUpdateServiceTest {
 
     whenever(prisonService.getCourtInformation(eq("SHFCC"))).thenReturn(
       CourtFromPrisonSystem(
-        "SHFCC","Sheffield Crown Court",
+        "SHFCC", "Sheffield Crown Court",
         "Sheffield Crown Court in Sheffield", "CRT", true, null,
         listOf(
           addressFromPrisonSystem()
@@ -55,7 +58,6 @@ class CourtRegisterUpdateServiceTest {
     )
     val diffs = service.updateCourtDetails(CourtUpdate("SHFCC"))
     assertThat(diffs?.areEqual()).isTrue
-
   }
 
   @Test
@@ -66,7 +68,7 @@ class CourtRegisterUpdateServiceTest {
 
     whenever(prisonService.getCourtInformation(eq("SHFCC"))).thenReturn(
       CourtFromPrisonSystem(
-        "SHFCC","Sheffield Crown Court Wibble",
+        "SHFCC", "Sheffield Crown Court Wibble",
         "Sheffield Crown Court in Sheffield", "CRT", true, null,
         listOf(
           addressFromPrisonSystem()
@@ -86,18 +88,19 @@ class CourtRegisterUpdateServiceTest {
 
     whenever(prisonService.getCourtInformation(eq("SHFCC"))).thenReturn(
       CourtFromPrisonSystem(
-        "SHFCC","Sheffield Crown Court",
+        "SHFCC", "Sheffield Crown Court",
         "Sheffield Crown Court in Sheffield", "CRT", true, null,
         listOf(
-          AddressFromPrisonSystem(56L, "Business Address", null, "Main Sheffield Court Building", "Law Street", "Kelham Island", "Sheffield",
+          AddressFromPrisonSystem(
+            56L, "Business Address", null, "Main Sheffield Court Building", "Law Street", "Kelham Island", "Sheffield",
             "S1 5TT", "South Yorkshire", "England", true, false, LocalDate.now(), null,
-            listOf(PhoneFromPrisonSystem(23432L, "0114 1232311", "BUS", null), PhoneFromPrisonSystem(23437L, "0114 1232317", "FAX", null)))
+            listOf(PhoneFromPrisonSystem(23432L, "0114 1232311", "BUS", null), PhoneFromPrisonSystem(23437L, "0114 1232317", "FAX", null))
+          )
         )
       )
     )
     val diffs = service.updateCourtDetails(CourtUpdate("SHFCC"))
     assertThat(diffs?.areEqual()).isFalse
-
   }
 
   @Test
@@ -108,10 +111,11 @@ class CourtRegisterUpdateServiceTest {
 
     whenever(prisonService.getCourtInformation(eq("SHFCC"))).thenReturn(
       CourtFromPrisonSystem(
-        "SHFCC","Sheffield Crown Court",
+        "SHFCC", "Sheffield Crown Court",
         "Sheffield Crown Court in Sheffield", "CRT", true, null,
         listOf(
-          AddressFromPrisonSystem(56L, "Business Address", null, "Main Sheffield Court Building", "Lawson Street", "Kelham Island", "Sheffield",
+          AddressFromPrisonSystem(
+            56L, "Business Address", null, "Main Sheffield Court Building", "Lawson Street", "Kelham Island", "Sheffield",
             "S1 5TT", "South Yorkshire", "England", true, false, LocalDate.now(), null,
             phoneList()
           )
@@ -124,7 +128,6 @@ class CourtRegisterUpdateServiceTest {
     )
     val diffs = service.updateCourtDetails(CourtUpdate("SHFCC"))
     assertThat(diffs?.areEqual()).isFalse
-
   }
 
   private fun addressFromPrisonSystem() =

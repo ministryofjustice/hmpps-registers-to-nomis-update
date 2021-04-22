@@ -217,7 +217,6 @@ data class AddressFromPrisonSystem(
   }
 }
 
-
 data class PhoneFromPrisonSystem(
   var phoneId: Long? = null,
   val number: String,
