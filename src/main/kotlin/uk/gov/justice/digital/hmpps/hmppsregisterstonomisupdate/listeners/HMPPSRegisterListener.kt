@@ -5,7 +5,6 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.jms.annotation.JmsListener
 import org.springframework.stereotype.Service
-import uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.listeners.HMPPSRegisterListener.EventType.COURT_REGISTER_INSERT
 import uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.listeners.HMPPSRegisterListener.EventType.COURT_REGISTER_UPDATE
 import uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.model.CourtUpdate
 import uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.services.CourtRegisterUpdateService
