@@ -29,7 +29,7 @@ class CourtRegisterApiExtension : BeforeAllCallback, AfterAllCallback, BeforeEac
 
 class CourtRegisterApiMockServer : WireMockServer(WIREMOCK_PORT) {
   companion object {
-    private const val WIREMOCK_PORT = 8082
+    private const val WIREMOCK_PORT = 9082
   }
 
   private val COURTRESPONSE = """
