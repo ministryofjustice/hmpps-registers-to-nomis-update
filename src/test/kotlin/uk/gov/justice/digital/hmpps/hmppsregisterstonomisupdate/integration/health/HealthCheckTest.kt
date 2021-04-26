@@ -2,15 +2,33 @@ package uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.integration.hea
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.integration.IntegrationTestBase
+import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.test.annotation.DirtiesContext
+import org.springframework.test.context.ActiveProfiles
+import org.springframework.test.web.reactive.server.WebTestClient
+import uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.wiremock.CourtRegisterApiExtension
+import uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.wiremock.HmppsAuthApiExtension
+import uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.wiremock.PrisonApiExtension
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.function.Consumer
 
-class HealthCheckTest : IntegrationTestBase() {
+@ExtendWith(PrisonApiExtension::class, CourtRegisterApiExtension::class, HmppsAuthApiExtension::class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@ActiveProfiles(profiles = ["test"])
+@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
+class HealthCheckTest {
+
+  @Suppress("SpringJavaInjectionPointsAutowiringInspection")
+  @Autowired
+  lateinit var webTestClient: WebTestClient
 
   @Test
   fun `Health page reports ok`() {
+    stubPingWithResponse(200)
+
     webTestClient.get()
       .uri("/health")
       .exchange()
@@ -22,6 +40,8 @@ class HealthCheckTest : IntegrationTestBase() {
 
   @Test
   fun `Health info reports version`() {
+    stubPingWithResponse(200)
+
     webTestClient.get().uri("/health")
       .exchange()
       .expectStatus().isOk
@@ -34,6 +54,8 @@ class HealthCheckTest : IntegrationTestBase() {
 
   @Test
   fun `Health ping page is accessible`() {
+    stubPingWithResponse(200)
+
     webTestClient.get()
       .uri("/health/ping")
       .exchange()
@@ -45,6 +67,8 @@ class HealthCheckTest : IntegrationTestBase() {
 
   @Test
   fun `readiness reports ok`() {
+    stubPingWithResponse(200)
+
     webTestClient.get()
       .uri("/health/readiness")
       .exchange()
@@ -56,6 +80,8 @@ class HealthCheckTest : IntegrationTestBase() {
 
   @Test
   fun `liveness reports ok`() {
+    stubPingWithResponse(200)
+
     webTestClient.get()
       .uri("/health/liveness")
       .exchange()
@@ -63,5 +89,11 @@ class HealthCheckTest : IntegrationTestBase() {
       .isOk
       .expectBody()
       .jsonPath("status").isEqualTo("UP")
+  }
+
+  private fun stubPingWithResponse(status: Int) {
+    HmppsAuthApiExtension.hmppsAuth.stubHealthPing(status)
+    PrisonApiExtension.prisonApi.stubHealthPing(status)
+    CourtRegisterApiExtension.courtRegisterApi.stubHealthPing(status)
   }
 }

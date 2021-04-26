@@ -18,6 +18,30 @@ spring:
       test:
         - "stdout"
 
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${oauth.endpoint.url}/.well-known/jwks.json
+
+      client:
+        registration:
+          prison-api:
+            provider: hmpps-auth
+            client-id: ${hmpps-auth.client.client-id}
+            client-secret: ${hmpps-auth.client.client-secret}
+            authorization-grant-type: client_credentials
+            scope: read,write
+          court-register-api:
+            provider: hmpps-auth
+            client-id: ${hmpps-auth.client.client-id}
+            client-secret: ${hmpps-auth.client.client-secret}
+            authorization-grant-type: client_credentials
+            scope: read
+        provider:
+          hmpps-auth:
+            token-uri: ${oauth.endpoint.url}/oauth/token
+
 server:
   port: 8080
   servlet:
@@ -60,3 +84,9 @@ sqs:
   queue.name: hmpps_registers_to_nomis_queue
   dlq.name: hmpps_registers_to_nomis_dlq
   endpoint.region: ${aws.region}
+
+oauth:
+  token.url: ${oauth.endpoint.url}/oauth/token
+
+registertonomis:
+  apply-changes: false

@@ -20,7 +20,7 @@ internal class HMPPSRegisterListenerTest {
   internal fun `will call service for a court update`() {
     listener.onRegisterChange(courtRegisterUpdateMessage())
 
-    verify(courtRegisterUpdateService).updateCourtRegister(CourtUpdate("SHFCC"))
+    verify(courtRegisterUpdateService).updateCourtDetails(CourtUpdate("SHFCC"))
   }
 
   @Test

@@ -13,8 +13,15 @@ dependencies {
   implementation("org.springframework:spring-jms")
   implementation(platform("com.amazonaws:aws-java-sdk-bom:1.11.991"))
   implementation("com.amazonaws:amazon-sqs-java-messaging-lib:1.0.8")
+  implementation("org.springframework.boot:spring-boot-starter-security")
+  implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
+  implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
+  implementation("org.apache.commons:commons-lang3:3.12.0")
 
+  testImplementation("org.springframework.security:spring-security-test")
+  testImplementation("com.github.tomakehurst:wiremock-standalone:2.27.2")
   testImplementation("org.awaitility:awaitility-kotlin:4.0.3")
+  testImplementation("io.jsonwebtoken:jjwt:0.9.1")
 }
 
 tasks {

@@ -10,3 +10,22 @@ aws:
 
 sqs:
   endpoint.url: http://localhost:4566
+
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          public-key-location: classpath:local-public-key.pub
+
+oauth:
+  endpoint.url: http://localhost:8090/auth
+
+prison:
+  endpoint.url: http://localhost:9081
+
+court.register:
+  endpoint.url: http://localhost:9082
+
+registertonomis:
+  apply-changes: false
