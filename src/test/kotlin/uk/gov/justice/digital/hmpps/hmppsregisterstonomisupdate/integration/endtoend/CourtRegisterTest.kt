@@ -14,9 +14,10 @@ import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ActiveProfiles
 import uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.helpers.courtRegisterUpdateMessage
 import uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.wiremock.CourtRegisterApiExtension
+import uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.wiremock.HmppsAuthApiExtension
 import uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.wiremock.PrisonApiExtension
 
-@ExtendWith(PrisonApiExtension::class, CourtRegisterApiExtension::class)
+@ExtendWith(PrisonApiExtension::class, CourtRegisterApiExtension::class, HmppsAuthApiExtension::class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles(profiles = ["test"])
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)

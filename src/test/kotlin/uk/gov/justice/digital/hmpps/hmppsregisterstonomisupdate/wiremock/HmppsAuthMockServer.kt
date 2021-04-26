@@ -1,8 +1,11 @@
 package uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.wiremock
 
 import com.github.tomakehurst.wiremock.WireMockServer
+import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.client.WireMock.get
+import com.github.tomakehurst.wiremock.http.HttpHeader
+import com.github.tomakehurst.wiremock.http.HttpHeaders
 import org.junit.jupiter.api.extension.AfterAllCallback
 import org.junit.jupiter.api.extension.BeforeAllCallback
 import org.junit.jupiter.api.extension.BeforeEachCallback
@@ -16,10 +19,12 @@ class HmppsAuthApiExtension : BeforeAllCallback, AfterAllCallback, BeforeEachCal
 
   override fun beforeAll(context: ExtensionContext) {
     hmppsAuth.start()
+    hmppsAuth.stubGrantToken()
   }
 
   override fun beforeEach(context: ExtensionContext) {
     hmppsAuth.resetRequests()
+    hmppsAuth.stubGrantToken()
   }
 
   override fun afterAll(context: ExtensionContext) {
@@ -32,6 +37,22 @@ class HmppsAuthMockServer : WireMockServer(WIREMOCK_PORT) {
     private const val WIREMOCK_PORT = 8090
   }
 
+  fun stubGrantToken() {
+    stubFor(
+      WireMock.post(WireMock.urlEqualTo("/auth/oauth/token"))
+        .willReturn(
+          aResponse()
+            .withHeaders(HttpHeaders(HttpHeader("Content-Type", "application/json")))
+            .withBody(
+              """{
+                    "token_type": "bearer",
+                    "access_token": "ABCDE"
+                }
+              """.trimIndent()
+            )
+        )
+    )
+  }
 
   fun stubHealthPing(status: Int) {
     stubFor(

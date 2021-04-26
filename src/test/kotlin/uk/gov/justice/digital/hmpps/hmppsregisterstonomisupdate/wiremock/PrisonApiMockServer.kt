@@ -80,7 +80,7 @@ class PrisonApiMockServer : WireMockServer(WIREMOCK_PORT) {
 
   fun stubAgencyGet(agencyId: String, response: String = AGENCYRESPONSE) {
     stubFor(
-      get("/api/agencies/$agencyId").willReturn(
+      get("/api/agencies/$agencyId?withAddresses=true").willReturn(
         aResponse()
           .withHeader("Content-Type", "application/json")
           .withBody(response)
@@ -91,7 +91,7 @@ class PrisonApiMockServer : WireMockServer(WIREMOCK_PORT) {
 
   fun stubRefLookup(domain: String, code: String, description: String) {
     stubFor(
-      get("/api/reference-domains/domains/$domain/reverse-lookup").willReturn(
+      get(String.format("/api/reference-domains/domains/$domain/reverse-lookup?description=%s&wildcard=false", description.replace(" ", "%20"))).willReturn(
         aResponse()
           .withHeader("Content-Type", "application/json")
           .withBody(
