@@ -9,12 +9,13 @@ import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.wiremock.CourtRegisterApiExtension
+import uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.wiremock.HmppsAuthApiExtension
 import uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.wiremock.PrisonApiExtension
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.function.Consumer
 
-@ExtendWith(PrisonApiExtension::class, CourtRegisterApiExtension::class)
+@ExtendWith(PrisonApiExtension::class, CourtRegisterApiExtension::class, HmppsAuthApiExtension::class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles(profiles = ["test"])
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
@@ -91,6 +92,7 @@ class HealthCheckTest {
   }
 
   private fun stubPingWithResponse(status: Int) {
+    HmppsAuthApiExtension.hmppsAuth.stubHealthPing(status)
     PrisonApiExtension.prisonApi.stubHealthPing(status)
     CourtRegisterApiExtension.courtRegisterApi.stubHealthPing(status)
   }
