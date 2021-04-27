@@ -146,34 +146,7 @@ data class CourtFromPrisonSystem(
   val active: Boolean,
   val deactivationDate: LocalDate? = null,
   val addresses: List<AddressFromPrisonSystem> = listOf(),
-) {
-
-  override fun hashCode(): Int {
-    var result = agencyId.hashCode()
-    result = 31 * result + description.hashCode()
-    result = 31 * result + (longDescription?.hashCode() ?: 0)
-    result = 31 * result + agencyType.hashCode()
-    result = 31 * result + active.hashCode()
-    result = 31 * result + (deactivationDate?.hashCode() ?: 0)
-    return result
-  }
-
-  override fun equals(other: Any?): Boolean {
-    if (this === other) return true
-    if (javaClass != other?.javaClass) return false
-
-    other as CourtFromPrisonSystem
-
-    if (agencyId != other.agencyId) return false
-    if (description != other.description) return false
-    if (longDescription != other.longDescription) return false
-    if (agencyType != other.agencyType) return false
-    if (active != other.active) return false
-    if (deactivationDate != other.deactivationDate) return false
-
-    return true
-  }
-}
+)
 
 data class AddressFromPrisonSystem(
   var addressId: Long? = null,
@@ -192,30 +165,7 @@ data class AddressFromPrisonSystem(
   var endDate: LocalDate? = null,
   val phones: List<PhoneFromPrisonSystem> = listOf(),
   var comment: String? = null
-) {
-
-  override fun equals(other: Any?): Boolean {
-    if (this === other) return true
-    if (javaClass != other?.javaClass) return false
-
-    other as AddressFromPrisonSystem
-
-    if (premise != other.premise) return false
-    if (street != other.street) return false
-    if (locality != other.locality) return false
-    if (postalCode != other.postalCode) return false
-
-    return true
-  }
-
-  override fun hashCode(): Int {
-    var result = premise?.hashCode() ?: 0
-    result = 31 * result + (street?.hashCode() ?: 0)
-    result = 31 * result + (locality?.hashCode() ?: 0)
-    result = 31 * result + (postalCode?.hashCode() ?: 0)
-    return result
-  }
-}
+)
 
 data class PhoneFromPrisonSystem(
   var phoneId: Long? = null,
