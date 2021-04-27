@@ -9,7 +9,6 @@ import org.springframework.security.oauth2.client.OAuth2AuthorizedClientProvider
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository
 import org.springframework.security.oauth2.client.web.reactive.function.client.ServletOAuth2AuthorizedClientExchangeFilterFunction
-import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
 
 @Configuration
@@ -17,6 +16,7 @@ class WebClientConfiguration(
   @Value("\${oauth.endpoint.url}") private val oauthRootUri: String,
   @Value("\${prison.endpoint.url}") private val prisonRootUri: String,
   @Value("\${court.register.endpoint.url}") private val courtRegisterRootUri: String,
+  private val webClientBuilder: WebClient.Builder
 ) {
 
   @Bean
@@ -24,17 +24,9 @@ class WebClientConfiguration(
     val oauth2Client = ServletOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientManager)
     oauth2Client.setDefaultClientRegistrationId("prison-api")
 
-    return WebClient.builder()
+    return webClientBuilder
       .baseUrl(prisonRootUri)
       .apply(oauth2Client.oauth2Configuration())
-      .exchangeStrategies(
-        ExchangeStrategies.builder()
-          .codecs { configurer ->
-            configurer.defaultCodecs()
-              .maxInMemorySize(-1)
-          }
-          .build()
-      )
       .build()
   }
 
@@ -43,17 +35,9 @@ class WebClientConfiguration(
     val oauth2Client = ServletOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientManager)
     oauth2Client.setDefaultClientRegistrationId("court-register-api")
 
-    return WebClient.builder()
+    return webClientBuilder
       .baseUrl(courtRegisterRootUri)
       .apply(oauth2Client.oauth2Configuration())
-      .exchangeStrategies(
-        ExchangeStrategies.builder()
-          .codecs { configurer ->
-            configurer.defaultCodecs()
-              .maxInMemorySize(-1)
-          }
-          .build()
-      )
       .build()
   }
 

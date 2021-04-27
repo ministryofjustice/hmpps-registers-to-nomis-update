@@ -46,7 +46,7 @@ class CourtRegisterUpdateService(
 
       val diffs = checkForDifferences(currentCourtDataToCompare, newCourtData)
       if (!diffs.areEqual()) {
-        log.info("$courtId: Updating Prison System with court data. Changes {}", diffs)
+        log.info("$courtId: APPLY CHANGES=$applyChanges - Updating Prison System with court data. Changes {}", diffs)
 
         storeInPrisonData(currentCourtDataToCompare, newCourtData, applyChanges)
         val trackingAttributes = mapOf(
