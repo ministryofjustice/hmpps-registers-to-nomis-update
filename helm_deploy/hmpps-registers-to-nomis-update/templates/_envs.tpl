@@ -20,7 +20,7 @@ env:
     value: "{{ .Values.env.COURT_REGISTER_ENDPOINT_URL }}"
 
   - name: REGISTERTONOMIS_APPLY_CHANGES
-    value: "false"
+      value: "{{ .Values.env.APPLY_CHANGES }}"
 
   - name: SPRING_PROFILES_ACTIVE
     value: "logstash"
