@@ -25,6 +25,17 @@ class CourtRegisterUpdateService(
     val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
+  private val courtTypesToNOMISMap = mapOf(
+    "CMT" to "GCM",
+    "COA" to "CACD",
+    "COU" to "CO",
+    "CRN" to "CC",
+    "MAG" to "MG",
+    "YTH" to "YC",
+    "COM" to "CB",
+    "IMM" to "IMM",
+    "OTH" to "OTHER")
+
   fun updateCourtDetails(court: CourtUpdate): MapDifference<String, Any>? {
     log.info("About to update court $court")
     return updateCourt(court)
@@ -70,6 +81,7 @@ class CourtRegisterUpdateService(
       courtData.description,
       courtData.longDescription,
       courtData.active,
+      courtData.courtType,
       null,
       courtData.addresses.map { address ->
         AddressDataToSync(
@@ -190,6 +202,7 @@ class CourtRegisterUpdateService(
       courtData.longDescription,
       "CRT",
       courtData.active,
+      courtData.courtType,
       courtData.deactivationDate,
       courtData.addresses.map {
         addressFromPrisonSystem(it)
@@ -249,6 +262,7 @@ class CourtRegisterUpdateService(
       courtDto.courtName,
       courtDto.courtDescription ?: courtDto.courtName,
       courtDto.active,
+      courtTypesToNOMISMap.getOrDefault(courtDto.type.courtType, "OTHER"),
       null,
       courtDto.buildings.map { building ->
         AddressDataToSync(
@@ -290,6 +304,7 @@ data class CourtDataToSync(
   val description: String,
   val longDescription: String? = null,
   val active: Boolean,
+  val courtType: String,
   val deactivationDate: LocalDate? = null,
   val addresses: List<AddressDataToSync> = listOf(),
 ) {
@@ -299,6 +314,7 @@ data class CourtDataToSync(
     result = 31 * result + description.hashCode()
     result = 31 * result + (longDescription?.hashCode() ?: 0)
     result = 31 * result + active.hashCode()
+    result = 31 * result + courtType.hashCode()
     result = 31 * result + (deactivationDate?.hashCode() ?: 0)
     return result
   }
@@ -313,6 +329,7 @@ data class CourtDataToSync(
     if (description != other.description) return false
     if (longDescription != other.longDescription) return false
     if (active != other.active) return false
+    if (courtType != other.courtType) return false
     if (deactivationDate != other.deactivationDate) return false
 
     return true
