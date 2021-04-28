@@ -34,7 +34,8 @@ class CourtRegisterUpdateService(
     "YTH" to "YC",
     "COM" to "CB",
     "IMM" to "IMM",
-    "OTH" to "OTHER")
+    "OTH" to "OTHER"
+  )
 
   fun updateCourtDetails(court: CourtUpdate): MapDifference<String, Any>? {
     log.info("About to update court $court")

@@ -69,7 +69,7 @@ class CourtRegisterUpdateServiceTest {
     whenever(prisonService.getCourtInformation(eq("SHFCC"))).thenReturn(
       CourtFromPrisonSystem(
         "SHFCC", "Sheffield Crown Court Wibble",
-        "Sheffield Crown Court in Sheffield", "CRT", true, "CC",null,
+        "Sheffield Crown Court in Sheffield", "CRT", true, "CC", null,
         listOf(
           addressFromPrisonSystem()
         )
@@ -91,7 +91,7 @@ class CourtRegisterUpdateServiceTest {
     whenever(prisonService.getCourtInformation(eq("SHFCC"))).thenReturn(
       CourtFromPrisonSystem(
         "SHFCC", "Sheffield Crown Court",
-        "Sheffield Crown Court in Sheffield", "CRT", true, "MG",null,
+        "Sheffield Crown Court in Sheffield", "CRT", true, "MG", null,
         listOf(
           addressFromPrisonSystem()
         )
@@ -136,7 +136,7 @@ class CourtRegisterUpdateServiceTest {
     whenever(prisonService.getCourtInformation(eq("SHFCC"))).thenReturn(
       CourtFromPrisonSystem(
         "SHFCC", "Sheffield Crown Court",
-        "Sheffield Crown Court in Sheffield", "CRT", true, "CC",null,
+        "Sheffield Crown Court in Sheffield", "CRT", true, "CC", null,
         listOf(
           AddressFromPrisonSystem(
             56L, "Business Address", null, "Main Sheffield Court Building", "Lawson Street", "Kelham Island", "Sheffield",
