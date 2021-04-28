@@ -50,7 +50,7 @@ class CourtRegisterUpdateServiceTest {
     whenever(prisonService.getCourtInformation(eq("SHFCC"))).thenReturn(
       CourtFromPrisonSystem(
         "SHFCC", "Sheffield Crown Court",
-        "Sheffield Crown Court in Sheffield", "CRT", true, null,
+        "Sheffield Crown Court in Sheffield", "CRT", true, "CC", null,
         listOf(
           addressFromPrisonSystem()
         )
@@ -69,7 +69,7 @@ class CourtRegisterUpdateServiceTest {
     whenever(prisonService.getCourtInformation(eq("SHFCC"))).thenReturn(
       CourtFromPrisonSystem(
         "SHFCC", "Sheffield Crown Court Wibble",
-        "Sheffield Crown Court in Sheffield", "CRT", true, null,
+        "Sheffield Crown Court in Sheffield", "CRT", true, "CC", null,
         listOf(
           addressFromPrisonSystem()
         )
@@ -78,6 +78,30 @@ class CourtRegisterUpdateServiceTest {
     val diffs = service.updateCourtDetails(CourtUpdate("SHFCC"))
     assertThat(diffs?.areEqual()).isFalse
     assertThat(diffs?.entriesDiffering()?.size).isEqualTo(1)
+    assertThat(diffs?.entriesDiffering()?.get("description")?.leftValue()).isEqualTo("Sheffield Crown Court Wibble")
+    assertThat(diffs?.entriesDiffering()?.get("description")?.rightValue()).isEqualTo("Sheffield Crown Court")
+  }
+
+  @Test
+  fun `should perform update on court when court type changed`() {
+    val courtRegisterData = generateCourtRegisterEntry()
+
+    whenever(courtRegisterService.getCourtInfoFromRegister(eq("SHFCC"))).thenReturn(courtRegisterData)
+
+    whenever(prisonService.getCourtInformation(eq("SHFCC"))).thenReturn(
+      CourtFromPrisonSystem(
+        "SHFCC", "Sheffield Crown Court",
+        "Sheffield Crown Court in Sheffield", "CRT", true, "MG", null,
+        listOf(
+          addressFromPrisonSystem()
+        )
+      )
+    )
+    val diffs = service.updateCourtDetails(CourtUpdate("SHFCC"))
+    assertThat(diffs?.areEqual()).isFalse
+    assertThat(diffs?.entriesDiffering()?.size).isEqualTo(1)
+    assertThat(diffs?.entriesDiffering()?.get("courtType")?.leftValue()).isEqualTo("MG")
+    assertThat(diffs?.entriesDiffering()?.get("courtType")?.rightValue()).isEqualTo("CC")
   }
 
   @Test
@@ -89,7 +113,7 @@ class CourtRegisterUpdateServiceTest {
     whenever(prisonService.getCourtInformation(eq("SHFCC"))).thenReturn(
       CourtFromPrisonSystem(
         "SHFCC", "Sheffield Crown Court",
-        "Sheffield Crown Court in Sheffield", "CRT", true, null,
+        "Sheffield Crown Court in Sheffield", "CRT", true, "CC", null,
         listOf(
           AddressFromPrisonSystem(
             56L, "Business Address", null, "Main Sheffield Court Building", "Law Street", "Kelham Island", "Sheffield",
@@ -112,7 +136,7 @@ class CourtRegisterUpdateServiceTest {
     whenever(prisonService.getCourtInformation(eq("SHFCC"))).thenReturn(
       CourtFromPrisonSystem(
         "SHFCC", "Sheffield Crown Court",
-        "Sheffield Crown Court in Sheffield", "CRT", true, null,
+        "Sheffield Crown Court in Sheffield", "CRT", true, "CC", null,
         listOf(
           AddressFromPrisonSystem(
             56L, "Business Address", null, "Main Sheffield Court Building", "Lawson Street", "Kelham Island", "Sheffield",
