@@ -5,7 +5,6 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.jms.annotation.JmsListener
 import org.springframework.stereotype.Service
-import uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.listeners.HMPPSRegisterListener.EventType.COURT_REGISTER_UPDATE
 import uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.model.CourtUpdate
 import uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.services.CourtRegisterUpdateService
 
@@ -25,19 +24,15 @@ class HMPPSRegisterListener(
     log.info("Received message ${sqsMessage.MessageId}")
     val changeEvent: RegisterChangeEvent = gson.fromJson(sqsMessage.Message, RegisterChangeEvent::class.java)
     when (changeEvent.eventType) {
-      COURT_REGISTER_UPDATE -> courtRegisterUpdateService.updateCourtDetails(CourtUpdate(courtId = changeEvent.id))
+      "COURT_REGISTER_UPDATE" -> courtRegisterUpdateService.updateCourtDetails(CourtUpdate(courtId = changeEvent.id))
       else -> log.info("Received a message I wasn't expected $changeEvent")
     }
   }
 
   data class RegisterChangeEvent(
-    val eventType: EventType,
+    val eventType: String,
     val id: String
   )
 
   data class SQSMessage(val Message: String, val MessageId: String)
-
-  enum class EventType {
-    COURT_REGISTER_UPDATE
-  }
 }
