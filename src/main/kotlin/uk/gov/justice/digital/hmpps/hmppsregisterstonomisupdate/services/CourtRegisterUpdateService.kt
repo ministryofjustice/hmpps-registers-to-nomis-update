@@ -30,7 +30,7 @@ class CourtRegisterUpdateService(
     "COA" to "CACD",
     "COU" to "CO",
     "CRN" to "CC",
-    "MAG" to "MG",
+    "MAG" to "MC",
     "YTH" to "YC",
     "COM" to "CB",
     "IMM" to "IMM",
