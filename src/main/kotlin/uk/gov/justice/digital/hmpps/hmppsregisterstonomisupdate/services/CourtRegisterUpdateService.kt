@@ -63,8 +63,8 @@ class CourtRegisterUpdateService(
         convertToPrisonCourtData(
           CourtDto(
             it.subCode!!,
-            courtDto.courtName + " - " + it.buildingName,
-            courtDto.courtName + " - " + it.buildingName,
+            truncateString(courtDto.courtName + " - " + it.buildingName, 40),
+            truncateString(courtDto.courtName + " - " + it.buildingName, 3000),
             courtDto.type,
             courtDto.active,
             listOf(it)
@@ -76,6 +76,9 @@ class CourtRegisterUpdateService(
     val mainCourt = convertToPrisonCourtData(courtDto, courtDto.buildings.filter { it.subCode == null })
     return subCourts.plus(mainCourt)
   }
+
+  fun truncateString(string: String, maxChar: Int): String =
+    if (string.length < maxChar) string else string.substring(0, maxChar)
 
   private fun processCourt(courtDto: CourtDataToSync): MapDifference<String, Any> {
     log.debug("Transformed register data to prison data format {}", courtDto)
