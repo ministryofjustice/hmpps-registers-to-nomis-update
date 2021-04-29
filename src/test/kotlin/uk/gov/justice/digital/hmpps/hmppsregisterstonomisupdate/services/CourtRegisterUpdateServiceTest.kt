@@ -98,11 +98,11 @@ class CourtRegisterUpdateServiceTest {
 
     whenever(prisonService.getCourtInformation(eq("SHFCC2"))).thenReturn(
       CourtFromPrisonSystem(
-        "SHFCC2", "Sheffield Crown Court - Annex 2",
-        "Sheffield Crown Court - Annex 2", "CRT", true, "CC", null,
+        "SHFCC2", "Sheffield Crown Court - Queen Mary Court",
+        "Sheffield Crown Court - Queen Mary Court Annex 2", "CRT", true, "CC", null,
         listOf(
           AddressFromPrisonSystem(
-            76L, "Business Address", null, "Annex 2", "Law Street", "Kelham Island", "Sheffield",
+            76L, "Business Address", null, "Queen Mary Court Annex 2", "Law Street", "Kelham Island", "Sheffield",
             "S1 5TT", "South Yorkshire", "England", true, false, LocalDate.now(), null,
             listOf(
               PhoneFromPrisonSystem(91432L, "0114 1932311", "BUS", null),
@@ -156,11 +156,11 @@ class CourtRegisterUpdateServiceTest {
 
     whenever(prisonService.getCourtInformation(eq("SHFCC2"))).thenReturn(
       CourtFromPrisonSystem(
-        "SHFCC2", "Sheffield Crown Court - Annex 2",
+        "SHFCC2", "Sheffield Crown Court - Queen Mary Court",
         "Sheffield Crown Court - Annex 2", "CRT", true, "CC", null,
         listOf(
           AddressFromPrisonSystem(
-            76L, "Business Address", null, "Annex 2", "Law Street", "Kelham Island", "Sheffield",
+            76L, "Business Address", null, "Queen Mary Court Annex 2", "Law Street", "Kelham Island", "Sheffield",
             "S1 5TT", "South Yorkshire", "England", true, false, LocalDate.now(), null,
             listOf(
               PhoneFromPrisonSystem(91432L, "0114 1932311", "BUS", null),
@@ -176,7 +176,10 @@ class CourtRegisterUpdateServiceTest {
     assertThat(diffs[0].entriesDiffering()?.size).isEqualTo(1)
     assertThat(diffs[0].entriesDiffering()?.get("longDescription")?.leftValue()).isEqualTo("Sheffield Crown Court - Annex 1 of main building")
     assertThat(diffs[0].entriesDiffering()?.get("longDescription")?.rightValue()).isEqualTo("Sheffield Crown Court - Annex 1")
-    assertThat(diffs[1].areEqual()).isTrue
+    assertThat(diffs[1].areEqual()).isFalse
+    assertThat(diffs[1].entriesDiffering()?.size).isEqualTo(1)
+    assertThat(diffs[1].entriesDiffering()?.get("longDescription")?.leftValue()).isEqualTo("Sheffield Crown Court - Annex 2")
+    assertThat(diffs[1].entriesDiffering()?.get("longDescription")?.rightValue()).isEqualTo("Sheffield Crown Court - Queen Mary Court Annex 2")
     assertThat(diffs[2].areEqual()).isTrue
   }
 
@@ -363,7 +366,7 @@ class CourtRegisterUpdateServiceTest {
         31L,
         "SHFCC",
         "SHFCC2",
-        "Annex 2",
+        "Queen Mary Court Annex 2",
         "Law Street",
         "Kelham Island",
         "Sheffield",
