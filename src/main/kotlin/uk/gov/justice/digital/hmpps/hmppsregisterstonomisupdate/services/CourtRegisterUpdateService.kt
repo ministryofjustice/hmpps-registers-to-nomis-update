@@ -37,43 +37,72 @@ class CourtRegisterUpdateService(
     "OTH" to "OTHER"
   )
 
-  fun updateCourtDetails(court: CourtUpdate): MapDifference<String, Any>? {
+  fun updateCourtDetails(court: CourtUpdate): List<MapDifference<String, Any>> {
     log.info("About to update court $court")
-    return updateCourt(court)
-  }
+    val diffs: MutableList<MapDifference<String, Any>> = mutableListOf()
 
-  private fun updateCourt(court: CourtUpdate): MapDifference<String, Any>? {
     courtRegisterService.getCourtInfoFromRegister(court.courtId)?.run {
       log.info("Found court register data {}", this)
 
-      val updatedCourtDataFromRegister = convertToPrisonCourtData(this)
-      log.debug("Transformed register data to prison data format {}", updatedCourtDataFromRegister)
-
-      val currentCourtDataInPrisonSystem = prisonService.getCourtInformation(courtId)
-      log.debug("Found prison data version of court {}", currentCourtDataInPrisonSystem)
-
-      val currentCourtDataToCompare =
-        if (currentCourtDataInPrisonSystem != null) translateToSync(currentCourtDataInPrisonSystem) else null
-      val newCourtData = mergeIds(updatedCourtDataFromRegister, currentCourtDataToCompare)
-
-      val diffs = checkForDifferences(currentCourtDataToCompare, newCourtData)
-      if (!diffs.areEqual()) {
-        log.info("$courtId: APPLY CHANGES=$applyChanges - Updating Prison System with court data. Changes {}", diffs)
-
-        storeInPrisonData(currentCourtDataToCompare, newCourtData, applyChanges)
-        val trackingAttributes = mapOf(
-          "courtId" to courtId,
-          "changes" to diffs.toString(),
-          "changes-applied" to applyChanges.toString()
-        )
-        telemetryClient.trackEvent("HR2NU-Court-Change", trackingAttributes, null)
-      } else {
-        log.info("$courtId: No changes to apply")
-        telemetryClient.trackEvent("HR2NU-Court-No-Change", mapOf("courtId" to courtId), null)
+      // check if court has multiple addresses with sub codes
+      buildCourts(this).forEach {
+        diffs.add(processCourt(it))
       }
-      return diffs
     }
-    return null
+    return diffs
+  }
+
+  private fun buildCourts(courtDto: CourtDto): List<CourtDataToSync> {
+
+    if (courtDto.buildings.size < 2) {
+      return listOf(convertToPrisonCourtData(courtDto, courtDto.buildings))
+    }
+
+    val subCourts = courtDto.buildings.filter { b -> b.subCode != null }
+      .map {
+        convertToPrisonCourtData(
+          CourtDto(
+            it.subCode!!,
+            courtDto.courtName + " - " + it.buildingName,
+            courtDto.courtName + " - " + it.buildingName,
+            courtDto.type,
+            courtDto.active,
+            listOf(it)
+          ),
+          listOf(it)
+        )
+      }
+
+    val mainCourt = convertToPrisonCourtData(courtDto, courtDto.buildings.filter { it.subCode == null })
+    return subCourts.plus(mainCourt)
+  }
+
+  private fun processCourt(courtDto: CourtDataToSync): MapDifference<String, Any> {
+    log.debug("Transformed register data to prison data format {}", courtDto)
+
+    val currentCourtDataInPrisonSystem = prisonService.getCourtInformation(courtDto.courtId)
+    log.debug("Found prison data version of court {}", currentCourtDataInPrisonSystem)
+
+    val currentCourtDataToCompare =
+      if (currentCourtDataInPrisonSystem != null) translateToSync(currentCourtDataInPrisonSystem) else null
+    val newCourtData = mergeIds(courtDto, currentCourtDataToCompare)
+
+    val diffs = checkForDifferences(currentCourtDataToCompare, newCourtData)
+    if (!diffs.areEqual()) {
+      log.info("$courtDto.courtId: APPLY CHANGES=$applyChanges - Updating Prison System with court data. Changes {}", diffs)
+
+      storeInPrisonData(currentCourtDataToCompare, newCourtData, applyChanges)
+      val trackingAttributes = mapOf(
+        "courtId" to courtDto.courtId,
+        "changes" to diffs.toString(),
+        "changes-applied" to applyChanges.toString()
+      )
+      telemetryClient.trackEvent("HR2NU-Court-Change", trackingAttributes, null)
+    } else {
+      log.info("$courtDto.courtId: No changes to apply")
+      telemetryClient.trackEvent("HR2NU-Court-No-Change", mapOf("courtId" to courtDto.courtId), null)
+    }
+    return diffs
   }
 
   private fun translateToSync(courtData: CourtFromPrisonSystem) =
@@ -257,7 +286,7 @@ class CourtRegisterUpdateService(
     return updatedCourtData
   }
 
-  private fun convertToPrisonCourtData(courtDto: CourtDto) =
+  private fun convertToPrisonCourtData(courtDto: CourtDto, buildings: List<BuildingDto>) =
     CourtDataToSync(
       courtDto.courtId,
       courtDto.courtName,
@@ -265,7 +294,7 @@ class CourtRegisterUpdateService(
       courtDto.active,
       courtTypesToNOMISMap.getOrDefault(courtDto.type.courtType, "OTHER"),
       null,
-      courtDto.buildings.map { building ->
+      buildings.map { building ->
         AddressDataToSync(
           addressType = getRefCode("ADDR_TYPE", "Business Address"),
           premise = building.buildingName ?: courtDto.courtName,
@@ -275,7 +304,7 @@ class CourtRegisterUpdateService(
           postalCode = building.postcode,
           county = getRefCode("COUNTY", building.county),
           country = getRefCode("COUNTRY", building.country),
-          primary = courtDto.buildings.size == 1 || building.subCode != null,
+          primary = building == buildings[0], // first one in the list?
           noFixedAddress = false,
           startDate = LocalDate.now(),
           endDate = null,
@@ -400,6 +429,7 @@ data class AddressDataToSync(
     if (county != other.county) return false
     if (country != other.country) return false
     if (postalCode != other.postalCode) return false
+    if (primary != other.primary) return false
 
     return true
   }
@@ -412,6 +442,7 @@ data class AddressDataToSync(
     result = 31 * result + (county?.hashCode() ?: 0)
     result = 31 * result + (country?.hashCode() ?: 0)
     result = 31 * result + (postalCode?.hashCode() ?: 0)
+    result = 31 * result + primary.hashCode()
     return result
   }
 }

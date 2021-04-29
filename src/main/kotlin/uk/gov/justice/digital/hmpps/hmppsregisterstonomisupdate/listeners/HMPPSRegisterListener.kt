@@ -38,6 +38,6 @@ class HMPPSRegisterListener(
   data class SQSMessage(val Message: String, val MessageId: String)
 
   enum class EventType {
-    COURT_REGISTER_UPDATE, COURT_REGISTER_INSERT
+    COURT_REGISTER_UPDATE
   }
 }
