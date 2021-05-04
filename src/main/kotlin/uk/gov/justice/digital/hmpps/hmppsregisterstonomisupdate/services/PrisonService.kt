@@ -19,6 +19,8 @@ class PrisonService(@Qualifier("prisonApiWebClient") private val webClient: WebC
     val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
+  private val courts = object : ParameterizedTypeReference<List<CourtFromPrisonSystem>>() {
+  }
   private val referenceCodes = object : ParameterizedTypeReference<List<ReferenceCode>>() {
   }
 
@@ -35,6 +37,15 @@ class PrisonService(@Qualifier("prisonApiWebClient") private val webClient: WebC
       .bodyToMono(CourtFromPrisonSystem::class.java)
       .onErrorResume(WebClientResponseException::class.java) { emptyWhenNotFound(it) }
       .block()
+  }
+
+  fun getAllCourts(): List<CourtFromPrisonSystem> {
+    return webClient.get()
+      .uri("/api/agencies/type/CRT?withAddresses=true&activeOnly=false")
+      .retrieve()
+      .bodyToMono(courts)
+      .onErrorResume(WebClientResponseException::class.java) { emptyWhenNotFound(it) }
+      .block()!!
   }
 
   fun lookupCodeForReferenceDescriptions(domain: String, description: String, wildcard: Boolean): List<ReferenceCode> {

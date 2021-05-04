@@ -52,7 +52,7 @@ class CourtRegisterUpdateService(
     return diffs
   }
 
-  private fun buildCourts(courtDto: CourtDto): List<CourtDataToSync> {
+  fun buildCourts(courtDto: CourtDto): List<CourtDataToSync> {
 
     if (courtDto.buildings.size < 2) {
       return listOf(convertToPrisonCourtData(courtDto, courtDto.buildings))
@@ -63,8 +63,8 @@ class CourtRegisterUpdateService(
         convertToPrisonCourtData(
           CourtDto(
             it.subCode!!,
-            truncateString(courtDto.courtName + " - " + it.buildingName, 40),
-            truncateString(courtDto.courtName + " - " + it.buildingName, 3000),
+            (courtDto.courtName + " - " + it.buildingName).truncate(40),
+            (courtDto.courtName + " - " + it.buildingName).truncate(3000),
             courtDto.type,
             courtDto.active,
             listOf(it)
@@ -77,8 +77,8 @@ class CourtRegisterUpdateService(
     return subCourts.plus(mainCourt)
   }
 
-  fun truncateString(string: String, maxChar: Int): String =
-    if (string.length < maxChar) string else string.substring(0, maxChar)
+  fun String.truncate(maxChar: Int): String =
+    if (this.length < maxChar) this else this.substring(0, maxChar)
 
   private fun processCourt(courtDto: CourtDataToSync): MapDifference<String, Any> {
     log.debug("Transformed register data to prison data format {}", courtDto)
@@ -86,29 +86,40 @@ class CourtRegisterUpdateService(
     val currentCourtDataInPrisonSystem = prisonService.getCourtInformation(courtDto.courtId)
     log.debug("Found prison data version of court {}", currentCourtDataInPrisonSystem)
 
-    val currentCourtDataToCompare =
-      if (currentCourtDataInPrisonSystem != null) translateToSync(currentCourtDataInPrisonSystem) else null
-    val newCourtData = mergeIds(courtDto, currentCourtDataToCompare)
+    val currentCourtDataToCompare = if (currentCourtDataInPrisonSystem != null) translateToSync(currentCourtDataInPrisonSystem) else null
+
+    return syncCourt(currentCourtDataToCompare, courtDto)
+  }
+
+  fun syncCourt(
+    currentCourtDataToCompare: CourtDataToSync?,
+    newCourtData: CourtDataToSync
+  ): MapDifference<String, Any> {
+
+    mergeIds(newCourtData, currentCourtDataToCompare)
 
     val diffs = checkForDifferences(currentCourtDataToCompare, newCourtData)
     if (!diffs.areEqual()) {
-      log.info("$courtDto.courtId: APPLY CHANGES=$applyChanges - Updating Prison System with court data. Changes {}", diffs)
+      log.info(
+        "$newCourtData.courtId: APPLY CHANGES=$applyChanges - Updating Prison System with court data. Changes {}",
+        diffs
+      )
 
       storeInPrisonData(currentCourtDataToCompare, newCourtData, applyChanges)
       val trackingAttributes = mapOf(
-        "courtId" to courtDto.courtId,
+        "courtId" to newCourtData.courtId,
         "changes" to diffs.toString(),
         "changes-applied" to applyChanges.toString()
       )
       telemetryClient.trackEvent("HR2NU-Court-Change", trackingAttributes, null)
     } else {
-      log.info("$courtDto.courtId: No changes to apply")
-      telemetryClient.trackEvent("HR2NU-Court-No-Change", mapOf("courtId" to courtDto.courtId), null)
+      log.info("$newCourtData.courtId: No changes to apply")
+      telemetryClient.trackEvent("HR2NU-Court-No-Change", mapOf("courtId" to newCourtData.courtId), null)
     }
     return diffs
   }
 
-  private fun translateToSync(courtData: CourtFromPrisonSystem) =
+  fun translateToSync(courtData: CourtFromPrisonSystem) =
     CourtDataToSync(
       courtData.agencyId,
       courtData.description,
@@ -264,8 +275,8 @@ class CourtRegisterUpdateService(
   private fun translateToPrisonSystemFormat(addressData: AddressDataToSync) =
     addressFromPrisonSystem(addressData)
 
-  private fun mergeIds(updatedCourtData: CourtDataToSync, legacyCourt: CourtDataToSync?): CourtDataToSync {
-    if (legacyCourt == null) return updatedCourtData
+  private fun mergeIds(updatedCourtData: CourtDataToSync, legacyCourt: CourtDataToSync?) {
+    if (legacyCourt == null) return
 
     // check for equality and update Ids if perfect match
     updatedCourtData.addresses.forEach { address ->
@@ -286,7 +297,6 @@ class CourtRegisterUpdateService(
         updateAddressAndPhone(primaryAddress)
       }
     }
-    return updatedCourtData
   }
 
   private fun convertToPrisonCourtData(courtDto: CourtDto, buildings: List<BuildingDto>) =
