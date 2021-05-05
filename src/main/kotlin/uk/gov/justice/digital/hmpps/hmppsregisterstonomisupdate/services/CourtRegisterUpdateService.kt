@@ -125,7 +125,7 @@ class CourtRegisterUpdateService(
       courtData.description,
       courtData.longDescription,
       courtData.active,
-      courtData.courtType,
+      courtData.courtType ?: "OTHER",
       null,
       courtData.addresses.map { address ->
         AddressDataToSync(

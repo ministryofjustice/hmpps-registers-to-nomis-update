@@ -42,30 +42,45 @@ class CourtRegisterSyncServiceTest {
   }
 
   @Test
-  fun `should perform no update`() {
-    val courtRegisterData = generateCourtRegisterEntry()
+  fun `should perform updates`() {
+    val courtRegisterData = listOf(
+      generateCourtRegisterEntry("SHFCC", "Sheffield Crown Court"),
+      generateCourtRegisterEntry("SHFC1", "Sheffield Crown Court 1"),
+      generateCourtRegisterEntry("SHFC2", "Sheffield Crown Court 2")
+    )
 
-    whenever(courtRegisterService.getAllActiveCourts()).thenReturn(listOf(courtRegisterData))
+    whenever(courtRegisterService.getAllActiveCourts()).thenReturn(courtRegisterData)
 
     whenever(prisonService.getAllCourts()).thenReturn(
       listOf(
-        CourtFromPrisonSystem(
-          "SHFCC", "Sheffield Crown Court",
-          "Sheffield Crown Court in Sheffield", "CRT", true, "CC", null,
-          listOf(
-            addressFromPrisonSystem()
-          )
-        )
+        courtFromPrisonSystem("SHFCC", "Sheffield Crown Court"),
+        courtFromPrisonSystem("SHFC3", "Sheffield Crown Court 3")
       )
     )
     val diffs = service.sync()
-    assertThat(diffs).hasSize(1)
+    assertThat(diffs).hasSize(4)
     assertThat(diffs[0].areEqual()).isTrue
+    assertThat(diffs[1].areEqual()).isFalse
+    assertThat(diffs[1].entriesOnlyOnRight().get("courtId")).isEqualTo("SHFC1")
+    assertThat(diffs[2].areEqual()).isFalse
+    assertThat(diffs[2].entriesOnlyOnRight().get("courtId")).isEqualTo("SHFC2")
+    assertThat(diffs[3].areEqual()).isFalse
+    assertThat(diffs[3].entriesInCommon().get("courtId")).isEqualTo("SHFC3")
+    assertThat(diffs[3].entriesDiffering().get("active")?.leftValue()).isEqualTo(true)
+    assertThat(diffs[3].entriesDiffering().get("active")?.rightValue()).isEqualTo(false)
   }
 
-  private fun generateCourtRegisterEntry() = CourtDto(
-    "SHFCC",
-    "Sheffield Crown Court",
+  private fun courtFromPrisonSystem(courtId: String, name: String) = CourtFromPrisonSystem(
+    courtId, name,
+    "Sheffield Crown Court in Sheffield", "CRT", true, "CC", null,
+    listOf(
+      addressFromPrisonSystem()
+    )
+  )
+
+  private fun generateCourtRegisterEntry(courtId: String, name : String) = CourtDto(
+    courtId,
+    name,
     "Sheffield Crown Court in Sheffield",
     CourtTypeDto("CRN", "Crown Court"),
     true,

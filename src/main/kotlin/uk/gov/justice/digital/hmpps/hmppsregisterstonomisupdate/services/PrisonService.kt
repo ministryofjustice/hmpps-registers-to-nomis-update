@@ -155,7 +155,7 @@ data class CourtFromPrisonSystem(
   val longDescription: String? = null,
   val agencyType: String,
   val active: Boolean,
-  val courtType: String,
+  val courtType: String?,
   val deactivationDate: LocalDate? = null,
   val addresses: List<AddressFromPrisonSystem> = listOf(),
 )

@@ -36,23 +36,27 @@ class CourtRegisterSyncService(
 
     val diffs: MutableList<MapDifference<String, Any>> = mutableListOf()
 
+    // matches
+    diffs.addAll(
+      courtMap.filter { c -> allCourtsHeldInNomis[c.key] != null }
+        .map { courtRegisterUpdateService.syncCourt(allCourtsHeldInNomis[it.key], it.value) }
+    )
+
+    // new
     diffs.addAll(
       courtMap.filter { c -> allCourtsHeldInNomis[c.key] == null }
         .map { courtRegisterUpdateService.syncCourt(null, it.value) }
     )
 
+    // not there / inactive
     diffs.addAll(
-      allCourtsHeldInNomis.filter { c -> courtMap[c.key] == null }
+      allCourtsHeldInNomis.filter { c -> c.value.active && courtMap[c.key] == null }
         .map {
           courtRegisterUpdateService.syncCourt(
             allCourtsHeldInNomis[it.key],
             it.value.copy(active = false, deactivationDate = LocalDate.now())
           )
         }
-    )
-    diffs.addAll(
-      courtMap.filter { c -> allCourtsHeldInNomis[c.key] != null }
-        .map { courtRegisterUpdateService.syncCourt(allCourtsHeldInNomis[it.key], it.value) }
     )
 
     return diffs
