@@ -53,7 +53,7 @@ class CourtRegisterUpdateService(
     return diffs
   }
 
-  fun buildCourts(courtDto: CourtDto, useCache : Boolean = false): List<CourtDataToSync> {
+  fun buildCourts(courtDto: CourtDto, useCache: Boolean = false): List<CourtDataToSync> {
 
     if (courtDto.buildings.size < 2) {
       return listOf(convertToPrisonCourtData(courtDto, courtDto.buildings, useCache))

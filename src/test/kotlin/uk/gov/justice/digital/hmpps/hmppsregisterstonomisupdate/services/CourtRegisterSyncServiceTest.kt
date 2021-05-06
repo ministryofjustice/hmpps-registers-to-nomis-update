@@ -13,7 +13,7 @@ import java.time.LocalDate
 class CourtRegisterSyncServiceTest {
 
   private val courtRegisterService: CourtRegisterService = mock()
-  private val prisonReferenceDataService : PrisonReferenceDataService = mock()
+  private val prisonReferenceDataService: PrisonReferenceDataService = mock()
   private val prisonService: PrisonService = mock()
   private val telemetryClient: TelemetryClient = mock()
   private lateinit var service: CourtRegisterSyncService
@@ -79,7 +79,7 @@ class CourtRegisterSyncServiceTest {
     )
   )
 
-  private fun generateCourtRegisterEntry(courtId: String, name : String) = CourtDto(
+  private fun generateCourtRegisterEntry(courtId: String, name: String) = CourtDto(
     courtId,
     name,
     "Sheffield Crown Court in Sheffield",

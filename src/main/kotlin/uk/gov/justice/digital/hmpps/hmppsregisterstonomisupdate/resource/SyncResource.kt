@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.resource
 
-
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
@@ -60,4 +59,3 @@ class SyncResource(
     return map
   }
 }
-

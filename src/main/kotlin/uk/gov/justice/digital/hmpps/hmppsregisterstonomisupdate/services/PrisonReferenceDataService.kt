@@ -11,11 +11,11 @@ class PrisonReferenceDataService(private val prisonService: PrisonService) {
     val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  private val refData : MutableMap<String, Map<String, ReferenceCode>> = mutableMapOf()
+  private val refData: MutableMap<String, Map<String, ReferenceCode>> = mutableMapOf()
 
-  fun initialiseRefData(domains : List<String>) {
+  fun initialiseRefData(domains: List<String>) {
     domains.forEach {
-      refData[it] = prisonService.getReferenceData(it).map{ it.description to it }.toMap()
+      refData[it] = prisonService.getReferenceData(it).map { it.description to it }.toMap()
     }
   }
 

@@ -15,7 +15,7 @@ import java.time.LocalDate
 class CourtRegisterUpdateServiceTest {
 
   private val courtRegisterService: CourtRegisterService = mock()
-  private val prisonReferenceDataService : PrisonReferenceDataService = mock()
+  private val prisonReferenceDataService: PrisonReferenceDataService = mock()
   private val prisonService: PrisonService = mock()
   private val telemetryClient: TelemetryClient = mock()
 

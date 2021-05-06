@@ -58,7 +58,6 @@ class CourtRegisterSyncService(
           )
         }.toList()
 
-
     return matches + newCourts + removed
   }
 }
