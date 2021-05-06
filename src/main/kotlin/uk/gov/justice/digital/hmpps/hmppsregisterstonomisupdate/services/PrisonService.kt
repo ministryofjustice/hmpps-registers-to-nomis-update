@@ -58,6 +58,17 @@ class PrisonService(@Qualifier("prisonApiWebClient") private val webClient: WebC
     return result
   }
 
+  fun getReferenceData(domain: String): List<ReferenceCode> {
+    log.debug("looking up domain {}", domain)
+    val result = webClient.get()
+      .uri("/api/reference-domains/domains/$domain")
+      .header("Page-Limit", "10000")
+      .retrieve()
+      .bodyToMono(referenceCodes)
+      .block()!!
+    return result
+  }
+
   fun updateCourt(updatedCourt: CourtFromPrisonSystem): CourtFromPrisonSystem {
     log.debug("Updating court information with {}", updatedCourt)
     return webClient.put()

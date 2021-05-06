@@ -1,13 +1,11 @@
 package uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.resource
 
 
-import com.google.common.collect.MapDifference
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
-
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.validation.annotation.Validated
@@ -47,8 +45,19 @@ class SyncResource(
     ]
   )
   @PutMapping("")
-  fun syncCourts(): List<MapDifference<String, Any>> {
-    return courtRegisterSyncService.sync()
+  fun syncCourts(): List<Map<String, Any>> {
+    val diffs = courtRegisterSyncService.sync()
+    val map = diffs.map {
+      mapOf(
+        "equal" to it.areEqual(),
+        "common" to it.entriesInCommon(),
+        "differing" to it.entriesDiffering(),
+        "leftOnly" to it.entriesOnlyOnLeft(),
+        "rightOnly" to it.entriesOnlyOnRight()
+      ).toMap()
+    }
+
+    return map
   }
 }
 

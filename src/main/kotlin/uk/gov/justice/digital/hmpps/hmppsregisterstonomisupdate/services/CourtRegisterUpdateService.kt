@@ -17,6 +17,7 @@ import java.time.LocalDate
 class CourtRegisterUpdateService(
   private val courtRegisterService: CourtRegisterService,
   private val prisonService: PrisonService,
+  private val prisonReferenceDataService: PrisonReferenceDataService,
   private val telemetryClient: TelemetryClient,
   @Value("\${registertonomis.apply-changes}") private val applyChanges: Boolean,
   private val gson: Gson
@@ -52,10 +53,10 @@ class CourtRegisterUpdateService(
     return diffs
   }
 
-  fun buildCourts(courtDto: CourtDto): List<CourtDataToSync> {
+  fun buildCourts(courtDto: CourtDto, useCache : Boolean = false): List<CourtDataToSync> {
 
     if (courtDto.buildings.size < 2) {
-      return listOf(convertToPrisonCourtData(courtDto, courtDto.buildings))
+      return listOf(convertToPrisonCourtData(courtDto, courtDto.buildings, useCache))
     }
 
     val subCourts = courtDto.buildings.filter { b -> b.subCode != null }
@@ -69,11 +70,12 @@ class CourtRegisterUpdateService(
             courtDto.active,
             listOf(it)
           ),
-          listOf(it)
+          listOf(it),
+          useCache
         )
       }
 
-    val mainCourt = convertToPrisonCourtData(courtDto, courtDto.buildings.filter { it.subCode == null })
+    val mainCourt = convertToPrisonCourtData(courtDto, courtDto.buildings.filter { it.subCode == null }, useCache)
     return subCourts.plus(mainCourt)
   }
 
@@ -86,7 +88,9 @@ class CourtRegisterUpdateService(
     val currentCourtDataInPrisonSystem = prisonService.getCourtInformation(courtDto.courtId)
     log.debug("Found prison data version of court {}", currentCourtDataInPrisonSystem)
 
-    val currentCourtDataToCompare = if (currentCourtDataInPrisonSystem != null) translateToSync(currentCourtDataInPrisonSystem) else null
+    val currentCourtDataToCompare = if (currentCourtDataInPrisonSystem != null) translateToSync(
+      currentCourtDataInPrisonSystem
+    ) else null
 
     return syncCourt(currentCourtDataToCompare, courtDto)
   }
@@ -119,7 +123,7 @@ class CourtRegisterUpdateService(
     return diffs
   }
 
-  fun translateToSync(courtData: CourtFromPrisonSystem) =
+  fun translateToSync(courtData: CourtFromPrisonSystem, useCache: Boolean = false) =
     CourtDataToSync(
       courtData.agencyId,
       courtData.description,
@@ -130,14 +134,14 @@ class CourtRegisterUpdateService(
       courtData.addresses.map { address ->
         AddressDataToSync(
           addressId = address.addressId,
-          addressType = getRefCode("ADDR_TYPE", address.addressType),
+          addressType = prisonReferenceDataService.getRefCode("ADDR_TYPE", address.addressType, useCache),
           premise = address.premise,
           street = address.street,
           locality = address.locality,
-          town = getRefCode("CITY", address.town),
+          town = prisonReferenceDataService.getRefCode("CITY", address.town, useCache),
           postalCode = address.postalCode,
-          county = getRefCode("COUNTY", address.county),
-          country = getRefCode("COUNTRY", address.country),
+          county = prisonReferenceDataService.getRefCode("COUNTY", address.county, useCache),
+          country = prisonReferenceDataService.getRefCode("COUNTRY", address.country, useCache),
           primary = address.primary,
           noFixedAddress = address.noFixedAddress,
           startDate = address.startDate,
@@ -299,7 +303,7 @@ class CourtRegisterUpdateService(
     }
   }
 
-  private fun convertToPrisonCourtData(courtDto: CourtDto, buildings: List<BuildingDto>) =
+  private fun convertToPrisonCourtData(courtDto: CourtDto, buildings: List<BuildingDto>, useCache: Boolean = false) =
     CourtDataToSync(
       courtDto.courtId,
       courtDto.courtName,
@@ -309,14 +313,14 @@ class CourtRegisterUpdateService(
       null,
       buildings.map { building ->
         AddressDataToSync(
-          addressType = getRefCode("ADDR_TYPE", "Business Address"),
+          addressType = prisonReferenceDataService.getRefCode("ADDR_TYPE", "Business Address", useCache),
           premise = building.buildingName ?: courtDto.courtName,
           street = building.street,
           locality = building.locality,
-          town = getRefCode("CITY", building.town),
+          town = prisonReferenceDataService.getRefCode("CITY", building.town, useCache),
           postalCode = building.postcode,
-          county = getRefCode("COUNTY", building.county),
-          country = getRefCode("COUNTRY", building.country),
+          county = prisonReferenceDataService.getRefCode("COUNTY", building.county, useCache),
+          country = prisonReferenceDataService.getRefCode("COUNTRY", building.country, useCache),
           primary = building == buildings[0], // first one in the list?
           noFixedAddress = false,
           startDate = LocalDate.now(),
@@ -328,18 +332,6 @@ class CourtRegisterUpdateService(
         )
       }
     )
-
-  private fun getRefCode(domain: String, description: String?): ReferenceCode? {
-    var ref: ReferenceCode? = null
-    if (description != null) {
-      ref = prisonService.lookupCodeForReferenceDescriptions(domain, description, false).firstOrNull()
-      if (ref == null) {
-        ref = prisonService.lookupCodeForReferenceDescriptions(domain, description, true).firstOrNull()
-      }
-    }
-    log.debug("Searching for text '{}' in type {} - Found = {}", description, domain, ref)
-    return ref
-  }
 }
 
 data class CourtDataToSync(

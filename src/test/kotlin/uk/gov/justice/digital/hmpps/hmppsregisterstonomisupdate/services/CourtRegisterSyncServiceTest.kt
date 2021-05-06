@@ -13,6 +13,7 @@ import java.time.LocalDate
 class CourtRegisterSyncServiceTest {
 
   private val courtRegisterService: CourtRegisterService = mock()
+  private val prisonReferenceDataService : PrisonReferenceDataService = mock()
   private val prisonService: PrisonService = mock()
   private val telemetryClient: TelemetryClient = mock()
   private lateinit var service: CourtRegisterSyncService
@@ -20,24 +21,24 @@ class CourtRegisterSyncServiceTest {
   @BeforeEach
   fun before() {
     val courtRegisterUpdateService =
-      CourtRegisterUpdateService(courtRegisterService, prisonService, telemetryClient, false, GsonConfig().gson())
+      CourtRegisterUpdateService(courtRegisterService, prisonService, prisonReferenceDataService, telemetryClient, false, GsonConfig().gson())
 
-    service = CourtRegisterSyncService(courtRegisterUpdateService, courtRegisterService, prisonService)
+    service = CourtRegisterSyncService(courtRegisterUpdateService, prisonReferenceDataService, courtRegisterService, prisonService)
 
-    whenever(prisonService.lookupCodeForReferenceDescriptions(eq("ADDR_TYPE"), eq("Business Address"), eq(false))).thenReturn(
-      listOf(ReferenceCode("ADDR_TYPE", "BUS", "Business Address", "Y", null))
+    whenever(prisonReferenceDataService.getRefCode(eq("ADDR_TYPE"), eq("Business Address"), eq(false))).thenReturn(
+      ReferenceCode("ADDR_TYPE", "BUS", "Business Address", "Y", null)
     )
 
-    whenever(prisonService.lookupCodeForReferenceDescriptions(eq("CITY"), eq("Sheffield"), eq(false))).thenReturn(
-      listOf(ReferenceCode("CITY", "892734", "Sheffield", "Y", null))
+    whenever(prisonReferenceDataService.getRefCode(eq("CITY"), eq("Sheffield"), eq(false))).thenReturn(
+      ReferenceCode("CITY", "892734", "Sheffield", "Y", null)
     )
 
-    whenever(prisonService.lookupCodeForReferenceDescriptions(eq("COUNTY"), eq("South Yorkshire"), eq(false))).thenReturn(
-      listOf(ReferenceCode("COUNTY", "S.YORKSHIRE", "South Yorkshire", "Y", null))
+    whenever(prisonReferenceDataService.getRefCode(eq("COUNTY"), eq("South Yorkshire"), eq(false))).thenReturn(
+      ReferenceCode("COUNTY", "S.YORKSHIRE", "South Yorkshire", "Y", null)
     )
 
-    whenever(prisonService.lookupCodeForReferenceDescriptions(eq("COUNTRY"), eq("England"), eq(false))).thenReturn(
-      listOf(ReferenceCode("COUNTRY", "ENG", "England", "Y", null))
+    whenever(prisonReferenceDataService.getRefCode(eq("COUNTRY"), eq("England"), eq(false))).thenReturn(
+      ReferenceCode("COUNTRY", "ENG", "England", "Y", null)
     )
   }
 

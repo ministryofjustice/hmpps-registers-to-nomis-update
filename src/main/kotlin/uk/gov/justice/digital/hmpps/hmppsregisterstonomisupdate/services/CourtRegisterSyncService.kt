@@ -9,6 +9,7 @@ import java.time.LocalDate
 @Service
 class CourtRegisterSyncService(
   private val courtRegisterUpdateService: CourtRegisterUpdateService,
+  private val prisonReferenceDataService: PrisonReferenceDataService,
   private val courtRegisterService: CourtRegisterService,
   private val prisonService: PrisonService
 ) {
@@ -18,6 +19,9 @@ class CourtRegisterSyncService(
   }
 
   fun sync(): List<MapDifference<String, Any>> {
+
+    prisonReferenceDataService.initialiseRefData(listOf("CITY", "COUNTY", "COUNTRY", "ADDR_TYPE"))
+
     return syncAllCourts(prisonService.getAllCourts(), courtRegisterService.getAllActiveCourts())
   }
 
@@ -26,39 +30,35 @@ class CourtRegisterSyncService(
     // get all the courts from the register
     val allRegisteredCourts: MutableList<CourtDataToSync> = mutableListOf()
     courtRegisterCourts.forEach {
-      allRegisteredCourts.addAll(courtRegisterUpdateService.buildCourts(it))
+      allRegisteredCourts.addAll(courtRegisterUpdateService.buildCourts(it, true))
     }
     val courtMap = allRegisteredCourts.associateBy { it.courtId }
 
     // get all active / inactive courts from NOMIS
     val allCourtsHeldInNomis =
-      prisonCourts.map { courtRegisterUpdateService.translateToSync(it) }.associateBy { it.courtId }
-
-    val diffs: MutableList<MapDifference<String, Any>> = mutableListOf()
+      prisonCourts.map { courtRegisterUpdateService.translateToSync(it, true) }.associateBy { it.courtId }
 
     // matches
-    diffs.addAll(
+    val matches =
       courtMap.filter { c -> allCourtsHeldInNomis[c.key] != null }
-        .map { courtRegisterUpdateService.syncCourt(allCourtsHeldInNomis[it.key], it.value) }
-    )
+        .map { courtRegisterUpdateService.syncCourt(allCourtsHeldInNomis[it.key], it.value) }.toList()
 
     // new
-    diffs.addAll(
+    val newCourts =
       courtMap.filter { c -> allCourtsHeldInNomis[c.key] == null }
-        .map { courtRegisterUpdateService.syncCourt(null, it.value) }
-    )
+        .map { courtRegisterUpdateService.syncCourt(null, it.value) }.toList()
 
     // not there / inactive
-    diffs.addAll(
+    val removed =
       allCourtsHeldInNomis.filter { c -> c.value.active && courtMap[c.key] == null }
         .map {
           courtRegisterUpdateService.syncCourt(
             allCourtsHeldInNomis[it.key],
             it.value.copy(active = false, deactivationDate = LocalDate.now())
           )
-        }
-    )
+        }.toList()
 
-    return diffs
+
+    return matches + newCourts + removed
   }
 }
