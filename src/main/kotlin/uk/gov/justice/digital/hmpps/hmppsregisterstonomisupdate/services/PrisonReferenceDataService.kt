@@ -15,7 +15,7 @@ class PrisonReferenceDataService(private val prisonService: PrisonService) {
 
   fun initialiseRefData(domains: List<String>) {
     domains.forEach {
-      refData[it] = prisonService.getReferenceData(it).map { it.description to it }.toMap()
+      refData[it] = prisonService.getReferenceData(it).map { it.description.toUpperCase() to it }.toMap()
     }
   }
 
@@ -23,7 +23,7 @@ class PrisonReferenceDataService(private val prisonService: PrisonService) {
     var ref: ReferenceCode? = null
     if (description != null) {
       if (useCache) {
-        ref = refData[domain]?.get(description)
+        ref = refData[domain]?.get(description.toUpperCase() )
       } else {
         ref = prisonService.lookupCodeForReferenceDescriptions(domain, description, false).firstOrNull()
       }
