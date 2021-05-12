@@ -43,21 +43,21 @@ class CourtRegisterSyncService(
     val stats = UpdateStatistics()
     // matches
     courtMap.filter { c -> allCourtsHeldInNomis[c.key] != null }
-      .map { courtRegisterUpdateService.syncCourt(allCourtsHeldInNomis[it.key], it.value, stats) }.toList()
+      .forEach { courtRegisterUpdateService.syncCourt(allCourtsHeldInNomis[it.key], it.value, stats) }
 
     // new
     courtMap.filter { c -> allCourtsHeldInNomis[c.key] == null }
-      .map { courtRegisterUpdateService.syncCourt(null, it.value, stats) }.toList()
+      .forEach { courtRegisterUpdateService.syncCourt(null, it.value, stats) }
 
     // not there / inactive
     allCourtsHeldInNomis.filter { c -> c.value.active && courtMap[c.key] == null }
-      .map {
+      .forEach {
         courtRegisterUpdateService.syncCourt(
           allCourtsHeldInNomis[it.key],
           it.value.copy(active = false, deactivationDate = LocalDate.now()),
           stats
         )
-      }.toList()
+      }
 
     return stats
   }
