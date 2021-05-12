@@ -24,7 +24,10 @@ class CourtRegisterSyncService(
     return syncAllCourts(prisonService.getAllCourts(), courtRegisterService.getAllActiveCourts())
   }
 
-  private fun syncAllCourts(prisonCourts: List<CourtFromPrisonSystem>, courtRegisterCourts: List<CourtDto>): UpdateStatistics {
+  private fun syncAllCourts(
+    prisonCourts: List<CourtFromPrisonSystem>,
+    courtRegisterCourts: List<CourtDto>
+  ): UpdateStatistics {
 
     // get all the courts from the register
     val allRegisteredCourts: MutableList<CourtDataToSync> = mutableListOf()
@@ -39,25 +42,22 @@ class CourtRegisterSyncService(
 
     val stats = UpdateStatistics()
     // matches
-    val matches =
-      courtMap.filter { c -> allCourtsHeldInNomis[c.key] != null }
-        .map { courtRegisterUpdateService.syncCourt(allCourtsHeldInNomis[it.key], it.value, stats) }.toList()
+    courtMap.filter { c -> allCourtsHeldInNomis[c.key] != null }
+      .map { courtRegisterUpdateService.syncCourt(allCourtsHeldInNomis[it.key], it.value, stats) }.toList()
 
     // new
-    val newCourts =
-      courtMap.filter { c -> allCourtsHeldInNomis[c.key] == null }
-        .map { courtRegisterUpdateService.syncCourt(null, it.value, stats) }.toList()
+    courtMap.filter { c -> allCourtsHeldInNomis[c.key] == null }
+      .map { courtRegisterUpdateService.syncCourt(null, it.value, stats) }.toList()
 
     // not there / inactive
-    val removed =
-      allCourtsHeldInNomis.filter { c -> c.value.active && courtMap[c.key] == null }
-        .map {
-          courtRegisterUpdateService.syncCourt(
-            allCourtsHeldInNomis[it.key],
-            it.value.copy(active = false, deactivationDate = LocalDate.now()),
-            stats
-          )
-        }.toList()
+    allCourtsHeldInNomis.filter { c -> c.value.active && courtMap[c.key] == null }
+      .map {
+        courtRegisterUpdateService.syncCourt(
+          allCourtsHeldInNomis[it.key],
+          it.value.copy(active = false, deactivationDate = LocalDate.now()),
+          stats
+        )
+      }.toList()
 
     return stats
   }
