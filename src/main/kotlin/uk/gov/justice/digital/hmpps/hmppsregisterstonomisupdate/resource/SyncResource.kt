@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.services.CourtRegisterSyncService
+import uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.services.UpdateStatistics
 
 @RestController
 @Validated
@@ -44,18 +45,7 @@ class SyncResource(
     ]
   )
   @PutMapping("")
-  fun syncCourts(): List<Map<String, Any>> {
-    val diffs = courtRegisterSyncService.sync()
-    val map = diffs.map {
-      mapOf(
-        "equal" to it.areEqual(),
-        "common" to it.entriesInCommon(),
-        "differing" to it.entriesDiffering(),
-        "leftOnly" to it.entriesOnlyOnLeft(),
-        "rightOnly" to it.entriesOnlyOnRight()
-      ).toMap()
-    }
-
-    return map
+  fun syncCourts(): UpdateStatistics {
+    return courtRegisterSyncService.sync()
   }
 }

@@ -11,6 +11,6 @@ aws --endpoint-url=http://localhost:4566 sns subscribe \
     --topic-arn arn:aws:sns:eu-west-2:000000000000:hmpps-domain-events \
     --protocol sqs \
     --notification-endpoint http://localhost:4566/queue/hmpps_registers_to_nomis_queue \
-    --attributes '{"FilterPolicy":"{\"eventType\":[ \"COURT_REGISTER_UPDATE\", \"COURT_REGISTER_INSERT\"] }"}'
+    --attributes '{"FilterPolicy":"{\"eventType\":[ \"COURT_REGISTER_UPDATE\"] }"}'
 
 echo All Ready

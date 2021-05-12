@@ -30,7 +30,6 @@ class PrisonService(@Qualifier("prisonApiWebClient") private val webClient: WebC
     if (exception.rawStatusCode == statusCode.value()) Mono.empty() else Mono.error(exception)
 
   fun getCourtInformation(courtId: String): CourtFromPrisonSystem? {
-    log.debug("Looking up prison court info {}", courtId)
     return webClient.get()
       .uri("/api/agencies/$courtId?withAddresses=true&activeOnly=false")
       .retrieve()
@@ -49,7 +48,6 @@ class PrisonService(@Qualifier("prisonApiWebClient") private val webClient: WebC
   }
 
   fun lookupCodeForReferenceDescriptions(domain: String, description: String, wildcard: Boolean): List<ReferenceCode> {
-    log.debug("looking up domain {} for description {}", domain, description)
     val result = webClient.get()
       .uri("/api/reference-domains/domains/$domain/reverse-lookup?description=$description&wildcard=$wildcard")
       .retrieve()
@@ -59,7 +57,6 @@ class PrisonService(@Qualifier("prisonApiWebClient") private val webClient: WebC
   }
 
   fun getReferenceData(domain: String): List<ReferenceCode> {
-    log.debug("looking up domain {}", domain)
     val result = webClient.get()
       .uri("/api/reference-domains/domains/$domain")
       .header("Page-Limit", "10000")

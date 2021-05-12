@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.services
 
-import com.google.common.collect.MapDifference
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -18,14 +17,14 @@ class CourtRegisterSyncService(
     val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun sync(): List<MapDifference<String, Any>> {
+  fun sync(): UpdateStatistics {
 
     prisonReferenceDataService.initialiseRefData(listOf("CITY", "COUNTY", "COUNTRY", "ADDR_TYPE"))
 
     return syncAllCourts(prisonService.getAllCourts(), courtRegisterService.getAllActiveCourts())
   }
 
-  private fun syncAllCourts(prisonCourts: List<CourtFromPrisonSystem>, courtRegisterCourts: List<CourtDto>): List<MapDifference<String, Any>> {
+  private fun syncAllCourts(prisonCourts: List<CourtFromPrisonSystem>, courtRegisterCourts: List<CourtDto>): UpdateStatistics {
 
     // get all the courts from the register
     val allRegisteredCourts: MutableList<CourtDataToSync> = mutableListOf()
@@ -38,15 +37,16 @@ class CourtRegisterSyncService(
     val allCourtsHeldInNomis =
       prisonCourts.map { courtRegisterUpdateService.translateToSync(it, true) }.associateBy { it.courtId }
 
+    val stats = UpdateStatistics()
     // matches
     val matches =
       courtMap.filter { c -> allCourtsHeldInNomis[c.key] != null }
-        .map { courtRegisterUpdateService.syncCourt(allCourtsHeldInNomis[it.key], it.value) }.toList()
+        .map { courtRegisterUpdateService.syncCourt(allCourtsHeldInNomis[it.key], it.value, stats) }.toList()
 
     // new
     val newCourts =
       courtMap.filter { c -> allCourtsHeldInNomis[c.key] == null }
-        .map { courtRegisterUpdateService.syncCourt(null, it.value) }.toList()
+        .map { courtRegisterUpdateService.syncCourt(null, it.value, stats) }.toList()
 
     // not there / inactive
     val removed =
@@ -54,10 +54,11 @@ class CourtRegisterSyncService(
         .map {
           courtRegisterUpdateService.syncCourt(
             allCourtsHeldInNomis[it.key],
-            it.value.copy(active = false, deactivationDate = LocalDate.now())
+            it.value.copy(active = false, deactivationDate = LocalDate.now()),
+            stats
           )
         }.toList()
 
-    return matches + newCourts + removed
+    return stats
   }
 }

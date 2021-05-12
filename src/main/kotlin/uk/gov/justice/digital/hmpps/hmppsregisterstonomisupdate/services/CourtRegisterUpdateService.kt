@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.services
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.google.common.collect.MapDifference
 import com.google.common.collect.Maps
 import com.google.common.reflect.TypeToken
@@ -38,19 +39,17 @@ class CourtRegisterUpdateService(
     "OTH" to "OTHER"
   )
 
-  fun updateCourtDetails(court: CourtUpdate): List<MapDifference<String, Any>> {
-    log.info("About to update court $court")
-    val diffs: MutableList<MapDifference<String, Any>> = mutableListOf()
+  fun updateCourtDetails(court: CourtUpdate): UpdateStatistics {
+    val stats = UpdateStatistics()
 
     courtRegisterService.getCourtInfoFromRegister(court.courtId)?.run {
-      log.info("Found court register data {}", this)
 
       // check if court has multiple addresses with sub codes
       buildCourts(this).forEach {
-        diffs.add(processCourt(it))
+        processCourt(it, stats)
       }
     }
-    return diffs
+    return stats
   }
 
   fun buildCourts(courtDto: CourtDto, useCache: Boolean = false): List<CourtDataToSync> {
@@ -82,45 +81,47 @@ class CourtRegisterUpdateService(
   fun String.truncate(maxChar: Int): String =
     if (this.length < maxChar) this else this.substring(0, maxChar)
 
-  private fun processCourt(courtDto: CourtDataToSync): MapDifference<String, Any> {
-    log.debug("Transformed register data to prison data format {}", courtDto)
+  private fun processCourt(courtDto: CourtDataToSync, stats: UpdateStatistics) {
 
     val currentCourtDataInPrisonSystem = prisonService.getCourtInformation(courtDto.courtId)
-    log.debug("Found prison data version of court {}", currentCourtDataInPrisonSystem)
 
     val currentCourtDataToCompare = if (currentCourtDataInPrisonSystem != null) translateToSync(
       currentCourtDataInPrisonSystem
     ) else null
 
-    return syncCourt(currentCourtDataToCompare, courtDto)
+    syncCourt(currentCourtDataToCompare, courtDto, stats)
   }
 
   fun syncCourt(
     currentCourtDataToCompare: CourtDataToSync?,
-    newCourtData: CourtDataToSync
-  ): MapDifference<String, Any> {
+    newCourtData: CourtDataToSync,
+    stats: UpdateStatistics
+  ) {
 
     mergeIds(newCourtData, currentCourtDataToCompare)
 
-    val diffs = checkForDifferences(currentCourtDataToCompare, newCourtData)
-    if (!diffs.areEqual()) {
-      log.info(
-        "$newCourtData.courtId: APPLY CHANGES=$applyChanges - Updating Prison System with court data. Changes {}",
-        diffs
-      )
-
-      storeInPrisonData(currentCourtDataToCompare, newCourtData, applyChanges)
-      val trackingAttributes = mapOf(
-        "courtId" to newCourtData.courtId,
-        "changes" to diffs.toString(),
-        "changes-applied" to applyChanges.toString()
-      )
-      telemetryClient.trackEvent("HR2NU-Court-Change", trackingAttributes, null)
+    val diff = checkForDifferences(currentCourtDataToCompare, newCourtData)
+    stats.diffs.add(diff)
+    if (!diff.areEqual()) {
+      try {
+        stats.add(storeInPrisonData(currentCourtDataToCompare, newCourtData, applyChanges))
+        val trackingAttributes = mapOf(
+          "courtId" to newCourtData.courtId,
+          "changes" to diff.toString(),
+          "changes-applied" to applyChanges.toString()
+        )
+        telemetryClient.trackEvent("HR2NU-Court-Change", trackingAttributes, null)
+      } catch (e: Exception) {
+        stats.courtsFailures.add(newCourtData.courtId)
+        log.error("Failed to update {} - message = {}", newCourtData.courtId, e.message)
+        val trackingAttributes = mapOf(
+          "courtId" to newCourtData.courtId
+        )
+        telemetryClient.trackEvent("HR2NU-Court-Change-Failure", trackingAttributes, null)
+      }
     } else {
-      log.info("$newCourtData.courtId: No changes to apply")
       telemetryClient.trackEvent("HR2NU-Court-No-Change", mapOf("courtId" to newCourtData.courtId), null)
     }
-    return diffs
   }
 
   fun translateToSync(courtData: CourtFromPrisonSystem, useCache: Boolean = false) =
@@ -158,24 +159,28 @@ class CourtRegisterUpdateService(
     currentCourtData: CourtDataToSync?,
     newCourtData: CourtDataToSync,
     applyChanges: Boolean = false
-  ) {
+  ): UpdateStatistics {
+
+    val stats = UpdateStatistics()
     if (applyChanges) {
       val dataPayload = translateToPrisonSystemFormat(newCourtData)
       if (currentCourtData == null) {
-        log.debug("Insert Court {}", dataPayload)
         prisonService.insertCourt(dataPayload)
+        stats.courtsInserted.add(dataPayload.agencyId)
       } else {
         if (newCourtData != currentCourtData) { // don't update if equal
-          log.debug("Update Court {}", dataPayload)
           prisonService.updateCourt(dataPayload)
+          stats.courtsUpdated.add(dataPayload.agencyId)
         }
       }
     }
 
     currentCourtData?.addresses?.forEach {
       if (newCourtData.addresses.find { a -> a.addressId == it.addressId } == null) {
-        log.info("No match found remove address {}", it)
-        if (applyChanges) prisonService.removeAddress(newCourtData.courtId, it.addressId!!)
+        if (applyChanges) {
+          prisonService.removeAddress(newCourtData.courtId, it.addressId!!)
+          stats.numberAddressesRemoved = stats.numberAddressesRemoved + 1
+        }
       }
     }
 
@@ -187,33 +192,36 @@ class CourtRegisterUpdateService(
       currentAddress?.run {
         this.phones.forEach {
           if (updatedAddress.phones.find { p -> p.phoneId == it.phoneId } == null) {
-            log.info("No match found remove phone {} for address {}", it, this)
-            if (applyChanges) prisonService.removePhone(newCourtData.courtId, this.addressId!!, it.phoneId!!)
+            if (applyChanges) {
+              prisonService.removePhone(newCourtData.courtId, this.addressId!!, it.phoneId!!)
+              stats.numberPhonesRemoved = stats.numberPhonesRemoved + 1
+            }
           }
         }
       }
 
       val updatedAddressId =
-        if (applyChanges) updateAddress(newCourtData.courtId, updatedAddress, currentAddress) else null
+        if (applyChanges) updateAddress(newCourtData.courtId, updatedAddress, currentAddress, stats) else null
 
       // update phones
       updatedAddress.phones.forEach { phone ->
         val currentPhone = currentAddress?.phones?.find { it.phoneId == phone.phoneId }
         if (phone.phoneId == null) {
           if (applyChanges && updatedAddressId != null) {
-            log.debug("Insert Phone {}", phone)
             prisonService.insertPhone(newCourtData.courtId, updatedAddressId, phone)
+            stats.numberPhonesInserted = stats.numberPhonesInserted + 1
           }
         } else {
           if (phone != currentPhone) {
             if (applyChanges && updatedAddressId != null) {
-              log.debug("Update Phone {}", phone)
               prisonService.updatePhone(newCourtData.courtId, updatedAddressId, phone)
+              stats.numberPhonesUpdated = stats.numberPhonesUpdated + 1
             }
           }
         }
       }
     }
+    return stats
   }
 
   private fun checkForDifferences(existingRecord: CourtDataToSync?, newRecord: CourtDataToSync): MapDifference<String, Any> {
@@ -226,18 +234,21 @@ class CourtRegisterUpdateService(
   private fun updateAddress(
     courtId: String,
     updatedAddress: AddressDataToSync,
-    currentAddress: AddressDataToSync?
+    currentAddress: AddressDataToSync?,
+    stats: UpdateStatistics
   ): Long? {
     val dataPayload = translateToPrisonSystemFormat(updatedAddress)
     if (dataPayload.addressId == null) {
-      log.debug("Insert Address {}", dataPayload)
-      return prisonService.insertAddress(courtId, dataPayload).addressId
+      val addressId = prisonService.insertAddress(courtId, dataPayload).addressId
+      stats.numberAddressesInserted = stats.numberAddressesInserted + 1
+      return addressId
     }
 
     currentAddress.run {
       if (this != updatedAddress) {
-        log.debug("Update Address {}", dataPayload)
-        return prisonService.updateAddress(courtId, dataPayload).addressId
+        val addressId = prisonService.updateAddress(courtId, dataPayload).addressId
+        stats.numberAddressesUpdated = stats.numberAddressesUpdated + 1
+        return addressId
       }
     }
     return dataPayload.addressId
@@ -297,7 +308,6 @@ class CourtRegisterUpdateService(
       val primaryAddress = updatedCourtData.addresses[0]
 
       with(legacyCourt.addresses[0]) {
-        log.debug("Updating primary address {}", primaryAddress)
         updateAddressAndPhone(primaryAddress)
       }
     }
@@ -325,13 +335,41 @@ class CourtRegisterUpdateService(
           noFixedAddress = false,
           startDate = LocalDate.now(),
           endDate = null,
-          comment = "Updated from Court Register",
+          comment = null,
           phones = building.contacts.map { phone ->
             PhoneFromPrisonSystem(null, phone.detail, if (phone.type == "TEL") "BUS" else phone.type, null)
           }
         )
       }
     )
+}
+
+data class UpdateStatistics(
+  var courtsInserted: MutableList<String> = mutableListOf(),
+  var courtsUpdated: MutableList<String> = mutableListOf(),
+  var courtsFailures: MutableList<String> = mutableListOf(),
+  var numberAddressesInserted: Int = 0,
+  var numberAddressesUpdated: Int = 0,
+  var numberAddressesRemoved: Int = 0,
+  var numberPhonesInserted: Int = 0,
+  var numberPhonesUpdated: Int = 0,
+  var numberPhonesRemoved: Int = 0,
+  @JsonIgnore
+  var diffs: MutableList<MapDifference<String, Any>> = mutableListOf()
+) {
+
+  fun add(toAdd: UpdateStatistics) {
+    courtsInserted.addAll(toAdd.courtsInserted)
+    courtsUpdated.addAll(toAdd.courtsUpdated)
+    courtsFailures.addAll(toAdd.courtsFailures)
+    numberAddressesInserted += toAdd.numberAddressesInserted
+    numberAddressesUpdated += toAdd.numberAddressesUpdated
+    numberAddressesRemoved += toAdd.numberAddressesRemoved
+    numberPhonesInserted += toAdd.numberPhonesInserted
+    numberPhonesUpdated += toAdd.numberPhonesUpdated
+    numberPhonesRemoved += toAdd.numberPhonesRemoved
+    diffs.addAll(toAdd.diffs)
+  }
 }
 
 data class CourtDataToSync(
@@ -390,10 +428,6 @@ data class AddressDataToSync(
   var comment: String? = null
 ) {
 
-  companion object {
-    val log: Logger = LoggerFactory.getLogger(this::class.java)
-  }
-
   fun updateAddressAndPhone(
     address: AddressDataToSync
   ) {
@@ -402,7 +436,6 @@ data class AddressDataToSync(
     address.startDate = startDate
     address.endDate = endDate
     address.comment = comment
-    log.debug("MATCH: Court Register address {} and prison court address {}", address, this)
 
     // update the phones
     updatePhoneIds(address, this)
@@ -416,7 +449,6 @@ data class AddressDataToSync(
       val matchedPhone = legacyAddress.phones.find { p -> p == phone }
       if (matchedPhone != null) {
         phone.phoneId = matchedPhone.phoneId
-        log.debug("MATCH: Court Register phones {} and prison court phones {}", phone, matchedPhone)
       }
     }
   }

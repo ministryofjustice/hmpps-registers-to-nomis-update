@@ -25,7 +25,6 @@ class CourtRegisterService(@Qualifier("courtRegisterApiWebClient") private val w
     if (exception.rawStatusCode == statusCode.value()) Mono.empty() else Mono.error(exception)
 
   fun getCourtInfoFromRegister(courtId: String): CourtDto? {
-    log.debug("Looking up court details from register {}", courtId)
     return webClient.get()
       .uri("/courts/id/$courtId")
       .retrieve()

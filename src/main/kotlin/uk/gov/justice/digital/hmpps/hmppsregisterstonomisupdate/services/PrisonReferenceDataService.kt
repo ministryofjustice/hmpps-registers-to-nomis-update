@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.services
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import java.util.Locale
 
 @Service
 class PrisonReferenceDataService(private val prisonService: PrisonService) {
@@ -14,18 +15,18 @@ class PrisonReferenceDataService(private val prisonService: PrisonService) {
   private val refData: MutableMap<String, Map<String, ReferenceCode>> = mutableMapOf()
 
   fun initialiseRefData(domains: List<String>) {
-    domains.forEach {
-      refData[it] = prisonService.getReferenceData(it).map { it.description.toUpperCase() to it }.toMap()
+    domains.forEach { domain ->
+      refData[domain] = prisonService.getReferenceData(domain).associateBy { it.description.uppercase(Locale.getDefault()) }
     }
   }
 
   fun getRefCode(domain: String, description: String?, useCache: Boolean = false): ReferenceCode? {
     var ref: ReferenceCode? = null
     if (description != null) {
-      if (useCache) {
-        ref = refData[domain]?.get(description.toUpperCase() )
+      ref = if (useCache) {
+        refData[domain]?.get(description.uppercase(Locale.getDefault()))
       } else {
-        ref = prisonService.lookupCodeForReferenceDescriptions(domain, description, false).firstOrNull()
+        prisonService.lookupCodeForReferenceDescriptions(domain, description, false).firstOrNull()
       }
     }
     return ref

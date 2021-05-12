@@ -19,9 +19,6 @@ dependencies {
   implementation("org.apache.commons:commons-lang3:3.12.0")
 
   implementation("org.springdoc:springdoc-openapi-webmvc-core:1.5.8")
-  implementation("org.springdoc:springdoc-openapi-ui:1.5.8")
-  implementation("org.springdoc:springdoc-openapi-kotlin:1.5.8")
-  implementation("org.springdoc:springdoc-openapi-data-rest:1.5.8")
 
   testImplementation("org.springframework.security:spring-security-test")
   testImplementation("com.github.tomakehurst:wiremock-standalone:2.27.2")

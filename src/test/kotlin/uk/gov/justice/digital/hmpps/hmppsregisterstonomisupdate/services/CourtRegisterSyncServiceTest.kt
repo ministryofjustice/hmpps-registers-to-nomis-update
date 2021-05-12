@@ -58,7 +58,8 @@ class CourtRegisterSyncServiceTest {
         courtFromPrisonSystem("SHFC3", "Sheffield Crown Court 3")
       )
     )
-    val diffs = service.sync()
+    val stats = service.sync()
+    val diffs = stats.diffs
     assertThat(diffs).hasSize(4)
     assertThat(diffs[0].areEqual()).isTrue
     assertThat(diffs[1].areEqual()).isFalse
