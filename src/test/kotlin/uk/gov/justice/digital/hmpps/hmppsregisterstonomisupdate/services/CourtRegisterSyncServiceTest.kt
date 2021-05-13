@@ -71,7 +71,6 @@ class CourtRegisterSyncServiceTest {
 
     assertThat(stats.courts["SHFC1"]?.numberAddressesInserted).isEqualTo(1)
     assertThat(stats.courts["SHFC2"]?.numberAddressesInserted).isEqualTo(1)
-
   }
 
   private fun courtFromPrisonSystem(courtId: String, name: String) = CourtFromPrisonSystem(

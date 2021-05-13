@@ -158,7 +158,7 @@ class CourtRegisterUpdateService(
   private fun storeInPrisonData(
     currentCourtData: CourtDataToSync?,
     newCourtData: CourtDataToSync,
-    stats : SyncStatistics
+    stats: SyncStatistics
   ) {
 
     val dataPayload = translateToPrisonSystemFormat(newCourtData)
@@ -190,7 +190,6 @@ class CourtRegisterUpdateService(
 
             if (applyChanges) prisonService.removePhone(newCourtData.courtId, this.addressId!!, it.phoneId!!)
             stats.courts[newCourtData.courtId] = stats.courts[newCourtData.courtId]!!.copy(updateType = UPDATE, numberPhonesRemoved = stats.courts[newCourtData.courtId]?.numberPhonesRemoved?.plus(1) ?: 0)
-
           }
         }
       }
@@ -350,11 +349,10 @@ data class SyncStatistics(
   val courts: MutableMap<String, CourtDifferences> = mutableMapOf()
 )
 
-
 data class CourtDifferences(
   val courtId: String,
   val differences: String,
-  val updateType : UpdateType = NONE,
+  val updateType: UpdateType = NONE,
   val numberAddressesInserted: Int = 0,
   val numberAddressesUpdated: Int = 0,
   val numberAddressesRemoved: Int = 0,
@@ -438,7 +436,7 @@ data class AddressDataToSync(
   }
 
   override fun compareTo(other: AddressDataToSync): Int {
-    return compareBy<AddressDataToSync>({it.premise}, {it.postalCode}, {it.street}, {it.locality}, {it.town?.description}, {it.county?.description}, {it.country?.description}).compare(this, other)
+    return compareBy<AddressDataToSync>({ it.premise }, { it.postalCode }, { it.street }, { it.locality }, { it.town?.description }, { it.county?.description }, { it.country?.description }).compare(this, other)
   }
 
   private fun updatePhoneIds(

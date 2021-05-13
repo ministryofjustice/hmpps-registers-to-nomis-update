@@ -192,12 +192,11 @@ data class PhoneFromPrisonSystem(
   val number: String,
   val type: String,
   val ext: String? = null
-) : Comparable<PhoneFromPrisonSystem>{
+) : Comparable<PhoneFromPrisonSystem> {
 
   override fun compareTo(other: PhoneFromPrisonSystem): Int {
-    return compareBy<PhoneFromPrisonSystem>({it.number}, {it.type}, {it.ext}).compare(this, other)
+    return compareBy<PhoneFromPrisonSystem>({ it.number }, { it.type }, { it.ext }).compare(this, other)
   }
-
 
   override fun hashCode(): Int {
     var result = number.hashCode()
