@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.services.CourtRegisterSyncService
-import uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.services.UpdateStatistics
+import uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.services.SyncStatistics
 
 @RestController
 @Validated
@@ -45,7 +45,7 @@ class SyncResource(
     ]
   )
   @PutMapping("")
-  fun syncCourts(): UpdateStatistics {
+  fun syncCourts(): SyncStatistics {
     return courtRegisterSyncService.sync()
   }
 }

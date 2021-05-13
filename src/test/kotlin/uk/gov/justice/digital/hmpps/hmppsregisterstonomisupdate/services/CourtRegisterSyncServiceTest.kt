@@ -59,17 +59,19 @@ class CourtRegisterSyncServiceTest {
       )
     )
     val stats = service.sync()
-    val diffs = stats.diffs
-    assertThat(diffs).hasSize(4)
-    assertThat(diffs[0].areEqual()).isTrue
-    assertThat(diffs[1].areEqual()).isFalse
-    assertThat(diffs[1].entriesOnlyOnRight().get("courtId")).isEqualTo("SHFC1")
-    assertThat(diffs[2].areEqual()).isFalse
-    assertThat(diffs[2].entriesOnlyOnRight().get("courtId")).isEqualTo("SHFC2")
-    assertThat(diffs[3].areEqual()).isFalse
-    assertThat(diffs[3].entriesInCommon().get("courtId")).isEqualTo("SHFC3")
-    assertThat(diffs[3].entriesDiffering().get("active")?.leftValue()).isEqualTo(true)
-    assertThat(diffs[3].entriesDiffering().get("active")?.rightValue()).isEqualTo(false)
+    assertThat(stats.courts).hasSize(3)
+
+    assertThat(stats.courts["SHFC1"]?.updateType).isEqualTo(CourtDifferences.UpdateType.UPDATE)
+    assertThat(stats.courts["SHFC2"]?.updateType).isEqualTo(CourtDifferences.UpdateType.UPDATE)
+    assertThat(stats.courts["SHFC3"]?.updateType).isEqualTo(CourtDifferences.UpdateType.UPDATE)
+
+    assertThat(stats.courts["SHFC1"]?.differences).isEqualTo("not equal: only on right={courtId=SHFC1, description=Sheffield Crown Court 1, longDescription=Sheffield Crown Court in Sheffield, active=true, courtType=CC, addresses=[{premise=Main Sheffield Court Building, street=Law Street, locality=Kelham Island, postalCode=S1 5TT, primary=true, noFixedAddress=false, startDate=2021-05-13, phones=[{number=0114 1232311, type=BUS}, {number=0114 1232312, type=FAX}]}]}")
+    assertThat(stats.courts["SHFC2"]?.differences).isEqualTo("not equal: only on right={courtId=SHFC2, description=Sheffield Crown Court 2, longDescription=Sheffield Crown Court in Sheffield, active=true, courtType=CC, addresses=[{premise=Main Sheffield Court Building, street=Law Street, locality=Kelham Island, postalCode=S1 5TT, primary=true, noFixedAddress=false, startDate=2021-05-13, phones=[{number=0114 1232311, type=BUS}, {number=0114 1232312, type=FAX}]}]}")
+    assertThat(stats.courts["SHFC3"]?.differences).isEqualTo("not equal: only on right={deactivationDate=2021-05-13}: value differences={active=(true, false)}")
+
+    assertThat(stats.courts["SHFC1"]?.numberAddressesInserted).isEqualTo(1)
+    assertThat(stats.courts["SHFC2"]?.numberAddressesInserted).isEqualTo(1)
+
   }
 
   private fun courtFromPrisonSystem(courtId: String, name: String) = CourtFromPrisonSystem(
