@@ -19,6 +19,8 @@ class PrisonService(@Qualifier("prisonApiWebClient") private val webClient: WebC
     val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
+  private val courts = object : ParameterizedTypeReference<List<CourtFromPrisonSystem>>() {
+  }
   private val referenceCodes = object : ParameterizedTypeReference<List<ReferenceCode>>() {
   }
 
@@ -28,7 +30,6 @@ class PrisonService(@Qualifier("prisonApiWebClient") private val webClient: WebC
     if (exception.rawStatusCode == statusCode.value()) Mono.empty() else Mono.error(exception)
 
   fun getCourtInformation(courtId: String): CourtFromPrisonSystem? {
-    log.debug("Looking up prison court info {}", courtId)
     return webClient.get()
       .uri("/api/agencies/$courtId?withAddresses=true&activeOnly=false")
       .retrieve()
@@ -37,10 +38,28 @@ class PrisonService(@Qualifier("prisonApiWebClient") private val webClient: WebC
       .block()
   }
 
+  fun getAllCourts(): List<CourtFromPrisonSystem> {
+    return webClient.get()
+      .uri("/api/agencies/type/CRT?withAddresses=true&activeOnly=false")
+      .retrieve()
+      .bodyToMono(courts)
+      .onErrorResume(WebClientResponseException::class.java) { emptyWhenNotFound(it) }
+      .block()!!
+  }
+
   fun lookupCodeForReferenceDescriptions(domain: String, description: String, wildcard: Boolean): List<ReferenceCode> {
-    log.debug("looking up domain {} for description {}", domain, description)
     val result = webClient.get()
       .uri("/api/reference-domains/domains/$domain/reverse-lookup?description=$description&wildcard=$wildcard")
+      .retrieve()
+      .bodyToMono(referenceCodes)
+      .block()!!
+    return result
+  }
+
+  fun getReferenceData(domain: String): List<ReferenceCode> {
+    val result = webClient.get()
+      .uri("/api/reference-domains/domains/$domain")
+      .header("Page-Limit", "10000")
       .retrieve()
       .bodyToMono(referenceCodes)
       .block()!!
@@ -144,7 +163,7 @@ data class CourtFromPrisonSystem(
   val longDescription: String? = null,
   val agencyType: String,
   val active: Boolean,
-  val courtType: String,
+  val courtType: String?,
   val deactivationDate: LocalDate? = null,
   val addresses: List<AddressFromPrisonSystem> = listOf(),
 )

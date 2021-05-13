@@ -32,12 +32,8 @@ class WebClientConfiguration(
 
   @Bean
   fun courtRegisterApiWebClient(authorizedClientManager: OAuth2AuthorizedClientManager): WebClient {
-    val oauth2Client = ServletOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientManager)
-    oauth2Client.setDefaultClientRegistrationId("court-register-api")
-
     return webClientBuilder
       .baseUrl(courtRegisterRootUri)
-      .apply(oauth2Client.oauth2Configuration())
       .build()
   }
 

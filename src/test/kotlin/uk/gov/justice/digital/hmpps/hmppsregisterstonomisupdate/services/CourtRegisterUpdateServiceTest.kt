@@ -15,6 +15,7 @@ import java.time.LocalDate
 class CourtRegisterUpdateServiceTest {
 
   private val courtRegisterService: CourtRegisterService = mock()
+  private val prisonReferenceDataService: PrisonReferenceDataService = mock()
   private val prisonService: PrisonService = mock()
   private val telemetryClient: TelemetryClient = mock()
 
@@ -22,22 +23,22 @@ class CourtRegisterUpdateServiceTest {
 
   @BeforeEach
   fun before() {
-    service = CourtRegisterUpdateService(courtRegisterService, prisonService, telemetryClient, true, GsonConfig().gson())
+    service = CourtRegisterUpdateService(courtRegisterService, prisonService, prisonReferenceDataService, telemetryClient, true, GsonConfig().gson())
 
-    whenever(prisonService.lookupCodeForReferenceDescriptions(eq("ADDR_TYPE"), eq("Business Address"), eq(false))).thenReturn(
-      listOf(ReferenceCode("ADDR_TYPE", "BUS", "Business Address", "Y", null))
+    whenever(prisonReferenceDataService.getRefCode(eq("ADDR_TYPE"), eq("Business Address"), eq(false))).thenReturn(
+      ReferenceCode("ADDR_TYPE", "BUS", "Business Address", "Y", null)
     )
 
-    whenever(prisonService.lookupCodeForReferenceDescriptions(eq("CITY"), eq("Sheffield"), eq(false))).thenReturn(
-      listOf(ReferenceCode("CITY", "892734", "Sheffield", "Y", null))
+    whenever(prisonReferenceDataService.getRefCode(eq("CITY"), eq("Sheffield"), eq(false))).thenReturn(
+      ReferenceCode("CITY", "892734", "Sheffield", "Y", null)
     )
 
-    whenever(prisonService.lookupCodeForReferenceDescriptions(eq("COUNTY"), eq("South Yorkshire"), eq(false))).thenReturn(
-      listOf(ReferenceCode("COUNTY", "S.YORKSHIRE", "South Yorkshire", "Y", null))
+    whenever(prisonReferenceDataService.getRefCode(eq("COUNTY"), eq("South Yorkshire"), eq(false))).thenReturn(
+      ReferenceCode("COUNTY", "S.YORKSHIRE", "South Yorkshire", "Y", null)
     )
 
-    whenever(prisonService.lookupCodeForReferenceDescriptions(eq("COUNTRY"), eq("England"), eq(false))).thenReturn(
-      listOf(ReferenceCode("COUNTRY", "ENG", "England", "Y", null))
+    whenever(prisonReferenceDataService.getRefCode(eq("COUNTRY"), eq("England"), eq(false))).thenReturn(
+      ReferenceCode("COUNTRY", "ENG", "England", "Y", null)
     )
   }
 
@@ -56,9 +57,9 @@ class CourtRegisterUpdateServiceTest {
         )
       )
     )
-    val diffs = service.updateCourtDetails(CourtUpdate("SHFCC"))
-    assertThat(diffs).hasSize(1)
-    assertThat(diffs[0].areEqual()).isTrue
+    val stats = service.updateCourtDetails(CourtUpdate("SHFCC"))
+    assertThat(stats.diffs).hasSize(1)
+    assertThat(stats.diffs[0].areEqual()).isTrue
   }
 
   @Test
@@ -112,11 +113,11 @@ class CourtRegisterUpdateServiceTest {
         )
       )
     )
-    val diffs = service.updateCourtDetails(CourtUpdate("SHFCC"))
-    assertThat(diffs).hasSize(3)
-    assertThat(diffs[0].areEqual()).isTrue
-    assertThat(diffs[1].areEqual()).isTrue
-    assertThat(diffs[2].areEqual()).isTrue
+    val stats = service.updateCourtDetails(CourtUpdate("SHFCC"))
+    assertThat(stats.diffs).hasSize(3)
+    assertThat(stats.diffs[0].areEqual()).isTrue
+    assertThat(stats.diffs[1].areEqual()).isTrue
+    assertThat(stats.diffs[2].areEqual()).isTrue
   }
 
   @Test
@@ -170,17 +171,17 @@ class CourtRegisterUpdateServiceTest {
         )
       )
     )
-    val diffs = service.updateCourtDetails(CourtUpdate("SHFCC"))
-    assertThat(diffs).hasSize(3)
-    assertThat(diffs[0].areEqual()).isFalse
-    assertThat(diffs[0].entriesDiffering()?.size).isEqualTo(1)
-    assertThat(diffs[0].entriesDiffering()?.get("longDescription")?.leftValue()).isEqualTo("Sheffield Crown Court - Annex 1 of main building")
-    assertThat(diffs[0].entriesDiffering()?.get("longDescription")?.rightValue()).isEqualTo("Sheffield Crown Court - Annex 1")
-    assertThat(diffs[1].areEqual()).isFalse
-    assertThat(diffs[1].entriesDiffering()?.size).isEqualTo(1)
-    assertThat(diffs[1].entriesDiffering()?.get("longDescription")?.leftValue()).isEqualTo("Sheffield Crown Court - Annex 2")
-    assertThat(diffs[1].entriesDiffering()?.get("longDescription")?.rightValue()).isEqualTo("Sheffield Crown Court - Queen Mary Court Annex 2")
-    assertThat(diffs[2].areEqual()).isTrue
+    val stats = service.updateCourtDetails(CourtUpdate("SHFCC"))
+    assertThat(stats.diffs).hasSize(3)
+    assertThat(stats.diffs[0].areEqual()).isFalse
+    assertThat(stats.diffs[0].entriesDiffering()?.size).isEqualTo(1)
+    assertThat(stats.diffs[0].entriesDiffering()?.get("longDescription")?.leftValue()).isEqualTo("Sheffield Crown Court - Annex 1 of main building")
+    assertThat(stats.diffs[0].entriesDiffering()?.get("longDescription")?.rightValue()).isEqualTo("Sheffield Crown Court - Annex 1")
+    assertThat(stats.diffs[1].areEqual()).isFalse
+    assertThat(stats.diffs[1].entriesDiffering()?.size).isEqualTo(1)
+    assertThat(stats.diffs[1].entriesDiffering()?.get("longDescription")?.leftValue()).isEqualTo("Sheffield Crown Court - Annex 2")
+    assertThat(stats.diffs[1].entriesDiffering()?.get("longDescription")?.rightValue()).isEqualTo("Sheffield Crown Court - Queen Mary Court Annex 2")
+    assertThat(stats.diffs[2].areEqual()).isTrue
   }
 
   @Test
@@ -198,9 +199,9 @@ class CourtRegisterUpdateServiceTest {
         )
       )
     )
-    val diffs = service.updateCourtDetails(CourtUpdate("SHFCC"))
-    assertThat(diffs).hasSize(1)
-    val diff = diffs[0]
+    val stats = service.updateCourtDetails(CourtUpdate("SHFCC"))
+    assertThat(stats.diffs).hasSize(1)
+    val diff = stats.diffs[0]
     assertThat(diff.areEqual()).isFalse
     assertThat(diff.entriesDiffering()?.size).isEqualTo(1)
     assertThat(diff.entriesDiffering()?.get("description")?.leftValue()).isEqualTo("Sheffield Crown Court Wibble")
@@ -222,9 +223,9 @@ class CourtRegisterUpdateServiceTest {
         )
       )
     )
-    val diffs = service.updateCourtDetails(CourtUpdate("SHFCC"))
-    assertThat(diffs).hasSize(1)
-    val diff = diffs[0]
+    val stats = service.updateCourtDetails(CourtUpdate("SHFCC"))
+    assertThat(stats.diffs).hasSize(1)
+    val diff = stats.diffs[0]
     assertThat(diff.areEqual()).isFalse
     assertThat(diff.entriesDiffering()?.size).isEqualTo(1)
     assertThat(diff.entriesDiffering()?.get("courtType")?.leftValue()).isEqualTo("MG")
@@ -250,9 +251,9 @@ class CourtRegisterUpdateServiceTest {
         )
       )
     )
-    val diffs = service.updateCourtDetails(CourtUpdate("SHFCC"))
-    assertThat(diffs).hasSize(1)
-    val diff = diffs[0]
+    val stats = service.updateCourtDetails(CourtUpdate("SHFCC"))
+    assertThat(stats.diffs).hasSize(1)
+    val diff = stats.diffs[0]
     assertThat(diff.areEqual()).isFalse
   }
 
@@ -279,9 +280,9 @@ class CourtRegisterUpdateServiceTest {
     whenever(prisonService.updateAddress(eq("SHFCC"), any())).thenReturn(
       addressFromPrisonSystem()
     )
-    val diffs = service.updateCourtDetails(CourtUpdate("SHFCC"))
-    assertThat(diffs).hasSize(1)
-    val diff = diffs[0]
+    val stats = service.updateCourtDetails(CourtUpdate("SHFCC"))
+    assertThat(stats.diffs).hasSize(1)
+    val diff = stats.diffs[0]
     assertThat(diff.areEqual()).isFalse
   }
 

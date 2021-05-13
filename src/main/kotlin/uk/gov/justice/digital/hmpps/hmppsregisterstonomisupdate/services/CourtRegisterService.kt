@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.services
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.HttpStatus
 import org.springframework.http.HttpStatus.NOT_FOUND
 import org.springframework.stereotype.Service
@@ -17,18 +18,28 @@ class CourtRegisterService(@Qualifier("courtRegisterApiWebClient") private val w
     val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
+  private val courts = object : ParameterizedTypeReference<List<CourtDto>>() {
+  }
   fun <T> emptyWhenNotFound(exception: WebClientResponseException): Mono<T> = emptyWhen(exception, NOT_FOUND)
   fun <T> emptyWhen(exception: WebClientResponseException, statusCode: HttpStatus): Mono<T> =
     if (exception.rawStatusCode == statusCode.value()) Mono.empty() else Mono.error(exception)
 
   fun getCourtInfoFromRegister(courtId: String): CourtDto? {
-    log.debug("Looking up court details from register {}", courtId)
     return webClient.get()
       .uri("/courts/id/$courtId")
       .retrieve()
       .bodyToMono(CourtDto::class.java)
       .onErrorResume(WebClientResponseException::class.java) { emptyWhenNotFound(it) }
       .block()
+  }
+
+  fun getAllActiveCourts(): List<CourtDto> {
+    return webClient.get()
+      .uri("/courts")
+      .retrieve()
+      .bodyToMono(courts)
+      .onErrorResume(WebClientResponseException::class.java) { emptyWhenNotFound(it) }
+      .block()!!
   }
 }
 
