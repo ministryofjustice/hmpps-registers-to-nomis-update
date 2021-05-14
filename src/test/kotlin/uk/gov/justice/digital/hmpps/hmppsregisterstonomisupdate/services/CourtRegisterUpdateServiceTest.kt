@@ -58,8 +58,7 @@ class CourtRegisterUpdateServiceTest {
       )
     )
     val stats = service.updateCourtDetails(CourtUpdate("SHFCC"))
-    assertThat(stats.diffs).hasSize(1)
-    assertThat(stats.diffs[0].areEqual()).isTrue
+    assertThat(stats.courts).hasSize(0)
   }
 
   @Test
@@ -114,10 +113,7 @@ class CourtRegisterUpdateServiceTest {
       )
     )
     val stats = service.updateCourtDetails(CourtUpdate("SHFCC"))
-    assertThat(stats.diffs).hasSize(3)
-    assertThat(stats.diffs[0].areEqual()).isTrue
-    assertThat(stats.diffs[1].areEqual()).isTrue
-    assertThat(stats.diffs[2].areEqual()).isTrue
+    assertThat(stats.courts).hasSize(0)
   }
 
   @Test
@@ -172,16 +168,9 @@ class CourtRegisterUpdateServiceTest {
       )
     )
     val stats = service.updateCourtDetails(CourtUpdate("SHFCC"))
-    assertThat(stats.diffs).hasSize(3)
-    assertThat(stats.diffs[0].areEqual()).isFalse
-    assertThat(stats.diffs[0].entriesDiffering()?.size).isEqualTo(1)
-    assertThat(stats.diffs[0].entriesDiffering()?.get("longDescription")?.leftValue()).isEqualTo("Sheffield Crown Court - Annex 1 of main building")
-    assertThat(stats.diffs[0].entriesDiffering()?.get("longDescription")?.rightValue()).isEqualTo("Sheffield Crown Court - Annex 1")
-    assertThat(stats.diffs[1].areEqual()).isFalse
-    assertThat(stats.diffs[1].entriesDiffering()?.size).isEqualTo(1)
-    assertThat(stats.diffs[1].entriesDiffering()?.get("longDescription")?.leftValue()).isEqualTo("Sheffield Crown Court - Annex 2")
-    assertThat(stats.diffs[1].entriesDiffering()?.get("longDescription")?.rightValue()).isEqualTo("Sheffield Crown Court - Queen Mary Court Annex 2")
-    assertThat(stats.diffs[2].areEqual()).isTrue
+    assertThat(stats.courts).hasSize(2)
+    assertThat(stats.courts["SHFCC1"]?.differences).isEqualTo("not equal: value differences={longDescription=(Sheffield Crown Court - Annex 1 of main building, Sheffield Crown Court - Annex 1)}")
+    assertThat(stats.courts["SHFCC2"]?.differences).isEqualTo("not equal: value differences={longDescription=(Sheffield Crown Court - Annex 2, Sheffield Crown Court - Queen Mary Court Annex 2)}")
   }
 
   @Test
@@ -200,12 +189,9 @@ class CourtRegisterUpdateServiceTest {
       )
     )
     val stats = service.updateCourtDetails(CourtUpdate("SHFCC"))
-    assertThat(stats.diffs).hasSize(1)
-    val diff = stats.diffs[0]
-    assertThat(diff.areEqual()).isFalse
-    assertThat(diff.entriesDiffering()?.size).isEqualTo(1)
-    assertThat(diff.entriesDiffering()?.get("description")?.leftValue()).isEqualTo("Sheffield Crown Court Wibble")
-    assertThat(diff.entriesDiffering()?.get("description")?.rightValue()).isEqualTo("Sheffield Crown Court")
+    assertThat(stats.courts).hasSize(1)
+    val courtStats = stats.courts["SHFCC"]!!
+    assertThat(courtStats.differences).isEqualTo("not equal: value differences={description=(Sheffield Crown Court Wibble, Sheffield Crown Court)}")
   }
 
   @Test
@@ -224,12 +210,9 @@ class CourtRegisterUpdateServiceTest {
       )
     )
     val stats = service.updateCourtDetails(CourtUpdate("SHFCC"))
-    assertThat(stats.diffs).hasSize(1)
-    val diff = stats.diffs[0]
-    assertThat(diff.areEqual()).isFalse
-    assertThat(diff.entriesDiffering()?.size).isEqualTo(1)
-    assertThat(diff.entriesDiffering()?.get("courtType")?.leftValue()).isEqualTo("MG")
-    assertThat(diff.entriesDiffering()?.get("courtType")?.rightValue()).isEqualTo("CC")
+    assertThat(stats.courts).hasSize(1)
+    val courtStats = stats.courts["SHFCC"]!!
+    assertThat(courtStats.differences).isEqualTo("not equal: value differences={courtType=(MG, CC)}")
   }
 
   @Test
@@ -252,9 +235,13 @@ class CourtRegisterUpdateServiceTest {
       )
     )
     val stats = service.updateCourtDetails(CourtUpdate("SHFCC"))
-    assertThat(stats.diffs).hasSize(1)
-    val diff = stats.diffs[0]
-    assertThat(diff.areEqual()).isFalse
+    assertThat(stats.courts).hasSize(1)
+    val courtStats = stats.courts["SHFCC"]!!
+    assertThat(courtStats.differences).contains("phones=[{phoneId=23432.0, number=0114 1232311, type=BUS}, {number=0114 1232312, type=FAX}]")
+    assertThat(courtStats.numberPhonesInserted).isEqualTo(1)
+    assertThat(courtStats.numberPhonesRemoved).isEqualTo(1)
+    assertThat(courtStats.numberAddressesInserted).isEqualTo(0)
+    assertThat(courtStats.numberAddressesUpdated).isEqualTo(0)
   }
 
   @Test
@@ -281,9 +268,12 @@ class CourtRegisterUpdateServiceTest {
       addressFromPrisonSystem()
     )
     val stats = service.updateCourtDetails(CourtUpdate("SHFCC"))
-    assertThat(stats.diffs).hasSize(1)
-    val diff = stats.diffs[0]
-    assertThat(diff.areEqual()).isFalse
+    assertThat(stats.courts).hasSize(1)
+    val courtStats = stats.courts["SHFCC"]!!
+    assertThat(courtStats.numberPhonesInserted).isEqualTo(0)
+    assertThat(courtStats.numberPhonesRemoved).isEqualTo(0)
+    assertThat(courtStats.numberAddressesInserted).isEqualTo(0)
+    assertThat(courtStats.numberAddressesUpdated).isEqualTo(1)
   }
 
   private fun addressFromPrisonSystem() =

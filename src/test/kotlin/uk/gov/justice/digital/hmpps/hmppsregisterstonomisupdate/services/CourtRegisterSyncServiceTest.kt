@@ -59,17 +59,18 @@ class CourtRegisterSyncServiceTest {
       )
     )
     val stats = service.sync()
-    val diffs = stats.diffs
-    assertThat(diffs).hasSize(4)
-    assertThat(diffs[0].areEqual()).isTrue
-    assertThat(diffs[1].areEqual()).isFalse
-    assertThat(diffs[1].entriesOnlyOnRight().get("courtId")).isEqualTo("SHFC1")
-    assertThat(diffs[2].areEqual()).isFalse
-    assertThat(diffs[2].entriesOnlyOnRight().get("courtId")).isEqualTo("SHFC2")
-    assertThat(diffs[3].areEqual()).isFalse
-    assertThat(diffs[3].entriesInCommon().get("courtId")).isEqualTo("SHFC3")
-    assertThat(diffs[3].entriesDiffering().get("active")?.leftValue()).isEqualTo(true)
-    assertThat(diffs[3].entriesDiffering().get("active")?.rightValue()).isEqualTo(false)
+    assertThat(stats.courts).hasSize(3)
+
+    assertThat(stats.courts["SHFC1"]?.updateType).isEqualTo(CourtDifferences.UpdateType.UPDATE)
+    assertThat(stats.courts["SHFC2"]?.updateType).isEqualTo(CourtDifferences.UpdateType.UPDATE)
+    assertThat(stats.courts["SHFC3"]?.updateType).isEqualTo(CourtDifferences.UpdateType.UPDATE)
+
+    assertThat(stats.courts["SHFC1"]?.differences).contains("not equal: only on right")
+    assertThat(stats.courts["SHFC2"]?.differences).contains("not equal: only on right")
+    assertThat(stats.courts["SHFC3"]?.differences).contains("value differences={active=(true, false)}")
+
+    assertThat(stats.courts["SHFC1"]?.numberAddressesInserted).isEqualTo(1)
+    assertThat(stats.courts["SHFC2"]?.numberAddressesInserted).isEqualTo(1)
   }
 
   private fun courtFromPrisonSystem(courtId: String, name: String) = CourtFromPrisonSystem(

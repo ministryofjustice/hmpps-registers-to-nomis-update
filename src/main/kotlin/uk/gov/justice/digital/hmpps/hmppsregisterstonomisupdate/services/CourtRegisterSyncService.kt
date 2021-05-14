@@ -17,7 +17,7 @@ class CourtRegisterSyncService(
     val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun sync(): UpdateStatistics {
+  fun sync(): SyncStatistics {
 
     prisonReferenceDataService.initialiseRefData(listOf("CITY", "COUNTY", "COUNTRY", "ADDR_TYPE"))
 
@@ -27,7 +27,7 @@ class CourtRegisterSyncService(
   private fun syncAllCourts(
     prisonCourts: List<CourtFromPrisonSystem>,
     courtRegisterCourts: List<CourtDto>
-  ): UpdateStatistics {
+  ): SyncStatistics {
 
     // get all the courts from the register
     val allRegisteredCourts: MutableList<CourtDataToSync> = mutableListOf()
@@ -40,7 +40,7 @@ class CourtRegisterSyncService(
     val allCourtsHeldInNomis =
       prisonCourts.map { courtRegisterUpdateService.translateToSync(it, true) }.associateBy { it.courtId }
 
-    val stats = UpdateStatistics()
+    val stats = SyncStatistics()
     // matches
     courtMap.filter { c -> allCourtsHeldInNomis[c.key] != null }
       .forEach { courtRegisterUpdateService.syncCourt(allCourtsHeldInNomis[it.key], it.value, stats) }
