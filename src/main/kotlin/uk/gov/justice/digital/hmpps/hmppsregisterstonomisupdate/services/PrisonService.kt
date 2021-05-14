@@ -31,7 +31,7 @@ class PrisonService(@Qualifier("prisonApiWebClient") private val webClient: WebC
 
   fun getCourtInformation(courtId: String): CourtFromPrisonSystem? {
     return webClient.get()
-      .uri("/api/agencies/$courtId?withAddresses=true&activeOnly=false")
+      .uri("/api/agencies/$courtId?withAddresses=true&activeOnly=false&skipFormatLocation=true")
       .retrieve()
       .bodyToMono(CourtFromPrisonSystem::class.java)
       .onErrorResume(WebClientResponseException::class.java) { emptyWhenNotFound(it) }
@@ -40,7 +40,7 @@ class PrisonService(@Qualifier("prisonApiWebClient") private val webClient: WebC
 
   fun getAllCourts(): List<CourtFromPrisonSystem> {
     return webClient.get()
-      .uri("/api/agencies/type/CRT?withAddresses=true&activeOnly=false")
+      .uri("/api/agencies/type/CRT?withAddresses=true&activeOnly=false&skipFormatLocation=true")
       .retrieve()
       .bodyToMono(courts)
       .onErrorResume(WebClientResponseException::class.java) { emptyWhenNotFound(it) }

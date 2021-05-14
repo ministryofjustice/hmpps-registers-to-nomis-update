@@ -65,9 +65,9 @@ class CourtRegisterSyncServiceTest {
     assertThat(stats.courts["SHFC2"]?.updateType).isEqualTo(CourtDifferences.UpdateType.UPDATE)
     assertThat(stats.courts["SHFC3"]?.updateType).isEqualTo(CourtDifferences.UpdateType.UPDATE)
 
-    assertThat(stats.courts["SHFC1"]?.differences).isEqualTo("not equal: only on right={courtId=SHFC1, description=Sheffield Crown Court 1, longDescription=Sheffield Crown Court in Sheffield, active=true, courtType=CC, addresses=[{premise=Main Sheffield Court Building, street=Law Street, locality=Kelham Island, postalCode=S1 5TT, primary=true, noFixedAddress=false, startDate=2021-05-13, phones=[{number=0114 1232311, type=BUS}, {number=0114 1232312, type=FAX}]}]}")
-    assertThat(stats.courts["SHFC2"]?.differences).isEqualTo("not equal: only on right={courtId=SHFC2, description=Sheffield Crown Court 2, longDescription=Sheffield Crown Court in Sheffield, active=true, courtType=CC, addresses=[{premise=Main Sheffield Court Building, street=Law Street, locality=Kelham Island, postalCode=S1 5TT, primary=true, noFixedAddress=false, startDate=2021-05-13, phones=[{number=0114 1232311, type=BUS}, {number=0114 1232312, type=FAX}]}]}")
-    assertThat(stats.courts["SHFC3"]?.differences).isEqualTo("not equal: only on right={deactivationDate=2021-05-13}: value differences={active=(true, false)}")
+    assertThat(stats.courts["SHFC1"]?.differences).contains("not equal: only on right")
+    assertThat(stats.courts["SHFC2"]?.differences).contains("not equal: only on right")
+    assertThat(stats.courts["SHFC3"]?.differences).contains("value differences={active=(true, false)}")
 
     assertThat(stats.courts["SHFC1"]?.numberAddressesInserted).isEqualTo(1)
     assertThat(stats.courts["SHFC2"]?.numberAddressesInserted).isEqualTo(1)

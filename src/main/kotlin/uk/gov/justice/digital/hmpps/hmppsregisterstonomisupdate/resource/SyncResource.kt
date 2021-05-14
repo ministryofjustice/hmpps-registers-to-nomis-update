@@ -23,14 +23,14 @@ class SyncResource(
 ) {
   @PreAuthorize("hasRole('ROLE_MAINTAIN_REF_DATA') and hasAuthority('SCOPE_write')")
   @Operation(
-    summary = "Update all court details",
+    summary = "Sync all court details from HMPPS Court Register",
     description = "Updates court information, role required is MAINTAIN_REF_DATA",
     security = [SecurityRequirement(name = "MAINTAIN_REF_DATA", scopes = ["write"])],
     responses = [
       ApiResponse(
         responseCode = "200",
-        description = "Court Information Updated",
-        content = [Content(mediaType = "application/json")]
+        description = "Court Information Sync'd",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = SyncStatistics::class))]
       ),
       ApiResponse(
         responseCode = "401",
@@ -39,7 +39,7 @@ class SyncResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Incorrect permissions to make court update",
+        description = "Incorrect permissions to make court sync",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))]
       ),
     ]

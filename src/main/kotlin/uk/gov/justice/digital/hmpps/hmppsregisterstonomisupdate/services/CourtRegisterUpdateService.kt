@@ -1,10 +1,13 @@
 package uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.services
 
+import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL
 import com.google.common.collect.MapDifference
 import com.google.common.collect.Maps
 import com.google.common.reflect.TypeToken
 import com.google.gson.Gson
 import com.microsoft.applicationinsights.TelemetryClient
+import io.swagger.v3.oas.annotations.media.Schema
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -366,20 +369,25 @@ class CourtRegisterUpdateService(
     )
 }
 
+@JsonInclude(NON_NULL)
+@Schema(description = "Sync Statistics")
 data class SyncStatistics(
+  @Schema(description = "Map of all courts have have been inserted, updated or errored")
   val courts: MutableMap<String, CourtDifferences> = mutableMapOf()
 )
 
+@JsonInclude(NON_NULL)
+@Schema(description = "Court Changes")
 data class CourtDifferences(
-  val courtId: String,
-  val differences: String,
-  val updateType: UpdateType = NONE,
-  val numberAddressesInserted: Int = 0,
-  val numberAddressesUpdated: Int = 0,
-  val numberAddressesRemoved: Int = 0,
-  val numberPhonesInserted: Int = 0,
-  val numberPhonesUpdated: Int = 0,
-  val numberPhonesRemoved: Int = 0
+  @Schema(description = "The ID of the Court", example = "SHFFCC") val courtId: String,
+  @Schema(description = "Differences listed", example = "SHFFCC") val differences: String,
+  @Schema(description = "Type of update", example = "INSERT") val updateType: UpdateType = NONE,
+  @Schema(description = "Number of addresses inserted for this court", example = "1") val numberAddressesInserted: Int = 0,
+  @Schema(description = "Number of addresses updated for this court", example = "2") val numberAddressesUpdated: Int = 0,
+  @Schema(description = "Number of addresses removed for this court", example = "3") val numberAddressesRemoved: Int = 0,
+  @Schema(description = "Number of phones inserted for this court", example = "1") val numberPhonesInserted: Int = 0,
+  @Schema(description = "Number of phones updated for this court", example = "2") val numberPhonesUpdated: Int = 0,
+  @Schema(description = "Number of phones removed for this court", example = "1") val numberPhonesRemoved: Int = 0
 ) {
 
   enum class UpdateType {
