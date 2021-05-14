@@ -10,10 +10,13 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.model.CourtUpdate
-import uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.services.CourtDifferences.UpdateType.*
+import uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.services.CourtDifferences.UpdateType.ERROR
+import uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.services.CourtDifferences.UpdateType.INSERT
+import uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.services.CourtDifferences.UpdateType.NONE
+import uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.services.CourtDifferences.UpdateType.UPDATE
 import java.lang.reflect.Type
 import java.time.LocalDate
-import java.util.*
+import java.util.SortedSet
 
 @Service
 class CourtRegisterUpdateService(
@@ -175,7 +178,10 @@ class CourtRegisterUpdateService(
     currentCourtData?.addresses?.forEach {
       if (newCourtData.addresses.find { a -> a.addressId == it.addressId } == null) {
         if (applyChanges) prisonService.removeAddress(newCourtData.courtId, it.addressId!!)
-        stats.courts[newCourtData.courtId] = stats.courts[newCourtData.courtId]!!.copy(updateType = UPDATE, numberAddressesRemoved = stats.courts[newCourtData.courtId]?.numberAddressesRemoved?.plus(1) ?: 0)
+        stats.courts[newCourtData.courtId] = stats.courts[newCourtData.courtId]!!.copy(
+          updateType = UPDATE,
+          numberAddressesRemoved = stats.courts[newCourtData.courtId]?.numberAddressesRemoved?.plus(1) ?: 0
+        )
       }
     }
 
@@ -189,7 +195,10 @@ class CourtRegisterUpdateService(
           if (updatedAddress.phones.find { p -> p.phoneId == it.phoneId } == null) {
 
             if (applyChanges) prisonService.removePhone(newCourtData.courtId, this.addressId!!, it.phoneId!!)
-            stats.courts[newCourtData.courtId] = stats.courts[newCourtData.courtId]!!.copy(updateType = UPDATE, numberPhonesRemoved = stats.courts[newCourtData.courtId]?.numberPhonesRemoved?.plus(1) ?: 0)
+            stats.courts[newCourtData.courtId] = stats.courts[newCourtData.courtId]!!.copy(
+              updateType = UPDATE,
+              numberPhonesRemoved = stats.courts[newCourtData.courtId]?.numberPhonesRemoved?.plus(1) ?: 0
+            )
           }
         }
       }
@@ -202,13 +211,19 @@ class CourtRegisterUpdateService(
         if (phone.phoneId == null) {
           if (updatedAddressId != null) {
             if (applyChanges) prisonService.insertPhone(newCourtData.courtId, updatedAddressId, phone)
-            stats.courts[newCourtData.courtId] = stats.courts[newCourtData.courtId]!!.copy(updateType = UPDATE, numberPhonesInserted = stats.courts[newCourtData.courtId]?.numberPhonesInserted?.plus(1) ?: 0)
+            stats.courts[newCourtData.courtId] = stats.courts[newCourtData.courtId]!!.copy(
+              updateType = UPDATE,
+              numberPhonesInserted = stats.courts[newCourtData.courtId]?.numberPhonesInserted?.plus(1) ?: 0
+            )
           }
         } else {
           if (phone != currentPhone) {
             if (updatedAddressId != null) {
               if (applyChanges) prisonService.updatePhone(newCourtData.courtId, updatedAddressId, phone)
-              stats.courts[newCourtData.courtId] = stats.courts[newCourtData.courtId]!!.copy(updateType = UPDATE, numberPhonesUpdated = stats.courts[newCourtData.courtId]?.numberPhonesUpdated?.plus(1) ?: 0)
+              stats.courts[newCourtData.courtId] = stats.courts[newCourtData.courtId]!!.copy(
+                updateType = UPDATE,
+                numberPhonesUpdated = stats.courts[newCourtData.courtId]?.numberPhonesUpdated?.plus(1) ?: 0
+              )
             }
           }
         }
@@ -241,14 +256,20 @@ class CourtRegisterUpdateService(
     val dataPayload = translateToPrisonSystemFormat(updatedAddress)
     if (dataPayload.addressId == null) {
       val addressId = if (applyChanges) prisonService.insertAddress(courtId, dataPayload).addressId else null
-      stats.courts[courtId] = stats.courts[courtId]!!.copy(updateType = UPDATE, numberAddressesInserted = stats.courts[courtId]?.numberAddressesInserted?.plus(1) ?: 0)
+      stats.courts[courtId] = stats.courts[courtId]!!.copy(
+        updateType = UPDATE,
+        numberAddressesInserted = stats.courts[courtId]?.numberAddressesInserted?.plus(1) ?: 0
+      )
       return addressId
     }
 
     currentAddress.run {
       if (this != updatedAddress) {
         val addressId = if (applyChanges) prisonService.updateAddress(courtId, dataPayload).addressId else null
-        stats.courts[courtId] = stats.courts[courtId]!!.copy(updateType = UPDATE, numberAddressesUpdated = stats.courts[courtId]?.numberAddressesUpdated?.plus(1) ?: 0)
+        stats.courts[courtId] = stats.courts[courtId]!!.copy(
+          updateType = UPDATE,
+          numberAddressesUpdated = stats.courts[courtId]?.numberAddressesUpdated?.plus(1) ?: 0
+        )
         return addressId
       }
     }
@@ -436,7 +457,15 @@ data class AddressDataToSync(
   }
 
   override fun compareTo(other: AddressDataToSync): Int {
-    return compareBy<AddressDataToSync>({ it.premise }, { it.postalCode }, { it.street }, { it.locality }, { it.town?.description }, { it.county?.description }, { it.country?.description }).compare(this, other)
+    return compareBy<AddressDataToSync>(
+      { it.premise },
+      { it.postalCode },
+      { it.street },
+      { it.locality },
+      { it.town?.description },
+      { it.county?.description },
+      { it.country?.description }
+    ).compare(this, other)
   }
 
   private fun updatePhoneIds(
