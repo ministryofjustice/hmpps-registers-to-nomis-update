@@ -74,7 +74,7 @@ class CourtRegisterUpdateServiceTest {
         listOf(
           addressFromPrisonSystem(),
           AddressFromPrisonSystem(
-            57L, "Business Address", null, "Another Sheffield Court Building - Part of the main", "Law Street", "Kelham Island", "Sheffield",
+            57L, "Business Address", null, "Another Sheffield Court Building - Part of main", "Law Street", "Kelham Island", "Sheffield",
             "S1 5TT", "South Yorkshire", "England", false, false, LocalDate.now(), null,
             listOf(PhoneFromPrisonSystem(22432L, "0114 1232318", "BUS", null))
           )
@@ -129,7 +129,7 @@ class CourtRegisterUpdateServiceTest {
         listOf(
           addressFromPrisonSystem(),
           AddressFromPrisonSystem(
-            57L, "Business Address", null, "Another Sheffield Court Building - Part of the main", "Law Street", "Kelham Island", "Sheffield",
+            57L, "Business Address", null, "Another Sheffield Court Building - Part of main", "Law Street", "Kelham Island", "Sheffield",
             "S1 5TT", "South Yorkshire", "England", false, false, LocalDate.now(), null,
             listOf(PhoneFromPrisonSystem(22432L, "0114 1232318", "BUS", null))
           )
@@ -373,7 +373,7 @@ class CourtRegisterUpdateServiceTest {
         41L,
         "SHFCC",
         null,
-        "Another Sheffield Court Building - Part of the main",
+        "Another Sheffield Court Building - Part of main",
         "Law Street",
         "Kelham Island",
         "Sheffield",
