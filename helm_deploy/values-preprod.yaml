@@ -21,7 +21,7 @@ env:
   OAUTH_ENDPOINT_URL: "https://sign-in-preprod.hmpps.service.justice.gov.uk/auth"
   PRISON_ENDPOINT_URL: "https://api-preprod.prison.service.justice.gov.uk"
   COURT_REGISTER_ENDPOINT_URL: "https://court-register-preprod.hmpps.service.justice.gov.uk"
-  APPLY_CHANGES: "true"
+  APPLY_CHANGES: "false"
 
 whitelist:
   office: "217.33.148.210/32"

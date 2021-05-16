@@ -71,8 +71,8 @@ class CourtRegisterUpdateService(
         convertToPrisonCourtData(
           CourtDto(
             it.subCode!!,
-            (courtDto.courtName + " - " + it.buildingName).truncate(40),
-            (courtDto.courtName + " - " + it.buildingName).truncate(3000),
+            (courtDto.courtName + " - " + it.buildingName),
+            (courtDto.courtName + " - " + it.buildingName),
             courtDto.type,
             courtDto.active,
             listOf(it)
@@ -341,19 +341,19 @@ class CourtRegisterUpdateService(
   private fun convertToPrisonCourtData(courtDto: CourtDto, buildings: List<BuildingDto>, useCache: Boolean = false) =
     CourtDataToSync(
       courtDto.courtId,
-      courtDto.courtName,
-      courtDto.courtDescription ?: courtDto.courtName,
+      courtDto.courtName.truncate(40),
+      courtDto.courtDescription ?: courtDto.courtName.truncate(3000),
       courtDto.active,
       courtTypesToNOMISMap.getOrDefault(courtDto.type.courtType, "OTHER"),
       null,
       buildings.map { building ->
         AddressDataToSync(
           addressType = prisonReferenceDataService.getRefCode("ADDR_TYPE", "Business Address", useCache),
-          premise = building.buildingName ?: courtDto.courtName,
-          street = building.street,
-          locality = building.locality,
+          premise = (building.buildingName ?: courtDto.courtName).truncate(50),
+          street = building.street?.truncate(160),
+          locality = building.locality?.truncate(70),
           town = prisonReferenceDataService.getRefCode("CITY", building.town, useCache),
-          postalCode = building.postcode,
+          postalCode = building.postcode?.truncate(12),
           county = prisonReferenceDataService.getRefCode("COUNTY", building.county, useCache),
           country = prisonReferenceDataService.getRefCode("COUNTRY", building.country, useCache),
           primary = building == buildings[0], // first one in the list?
@@ -362,7 +362,7 @@ class CourtRegisterUpdateService(
           endDate = null,
           comment = null,
           phones = building.contacts.map { phone ->
-            PhoneFromPrisonSystem(null, phone.detail, if (phone.type == "TEL") "BUS" else phone.type, null)
+            PhoneFromPrisonSystem(null, phone.detail.truncate(40), if (phone.type == "TEL") "BUS" else phone.type, null)
           }.toSortedSet(naturalOrder())
         )
       }.toSortedSet(naturalOrder())
