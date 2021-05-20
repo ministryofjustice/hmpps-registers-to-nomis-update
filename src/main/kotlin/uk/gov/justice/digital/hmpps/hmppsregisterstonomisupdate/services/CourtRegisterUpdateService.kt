@@ -153,6 +153,7 @@ class CourtRegisterUpdateService(
           noFixedAddress = address.noFixedAddress,
           startDate = address.startDate,
           endDate = address.endDate,
+          active = address.endDate == null,
           comment = address.comment,
           phones = address.phones.map { phone ->
             PhoneFromPrisonSystem(phone.phoneId, phone.number, phone.type, phone.ext)
@@ -359,7 +360,8 @@ class CourtRegisterUpdateService(
           primary = building == buildings[0], // first one in the list?
           noFixedAddress = false,
           startDate = LocalDate.now(),
-          endDate = null,
+          endDate = if (building.active.not()) { LocalDate.now() } else { null }, // TODO updating an inactive court building will update the endDate to today - we don't have the old prison address and so cannot tell if it was already inactive
+          active = building.active,
           comment = null,
           phones = building.contacts.map { phone ->
             PhoneFromPrisonSystem(null, phone.detail.truncate(40), if (phone.type == "TEL") "BUS" else phone.type, null)
@@ -447,17 +449,23 @@ data class AddressDataToSync(
   val noFixedAddress: Boolean,
   var startDate: LocalDate? = null,
   var endDate: LocalDate? = null,
+  var active: Boolean? = null,
   val phones: SortedSet<PhoneFromPrisonSystem> = sortedSetOf(),
   var comment: String? = null
 ) : Comparable<AddressDataToSync> {
 
-  fun updateAddressAndPhone(
-    address: AddressDataToSync
-  ) {
+  fun updateAddressAndPhone(address: AddressDataToSync) {
+    fun recentlyClosed() = address.active?.not()?.and(endDate == null) ?: false
+    fun recentlyOpened() = address.active?.and(endDate != null) ?: false
+    fun newEndDate() = when {
+      recentlyClosed() -> LocalDate.now()
+      recentlyOpened() -> null
+      else -> endDate
+    }
     address.addressId = addressId
     address.primary = primary
     address.startDate = startDate
-    address.endDate = endDate
+    address.endDate = newEndDate()
     address.comment = comment
 
     // update the phones
