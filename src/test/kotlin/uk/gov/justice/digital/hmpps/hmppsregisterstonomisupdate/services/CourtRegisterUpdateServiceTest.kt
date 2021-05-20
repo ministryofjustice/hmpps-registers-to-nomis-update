@@ -539,7 +539,7 @@ class CourtRegisterUpdateServiceTest {
       }
 
       @Test
-      fun `prison court address NOT active - register court address NOT active - should not change prison address end date (but in fact changes it to today))`() {
+      fun `prison court address NOT active - register court address NOT active - changes prison address end date to today`() {
         whenever(prisonService.getCourtInformation(eq("SHFCC"))).thenReturn(
           generatePrisonCourt().copy(
             addresses = listOf(
@@ -568,8 +568,7 @@ class CourtRegisterUpdateServiceTest {
         verify(prisonService).insertAddress(
           eq("SHFCC"),
           check {
-            // assertThat(it.endDate).isEqualTo(LocalDate.now().minusDays(1))  TODO This assertion should be correct but we lose information from the old prison address so cannot keep its end date
-            assertThat(it.endDate).isEqualTo(LocalDate.now())
+            assertThat(it.endDate).isEqualTo(LocalDate.now()) // This is strange that we reset the end date to today but in fact we have lost the original end date - a small price to pay to avoid a crazy and complicated address matching algorithm.
           }
         )
       }

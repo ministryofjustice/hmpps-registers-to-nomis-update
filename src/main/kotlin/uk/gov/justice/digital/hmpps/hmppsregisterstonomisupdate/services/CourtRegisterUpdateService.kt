@@ -360,7 +360,7 @@ class CourtRegisterUpdateService(
           primary = building == buildings[0], // first one in the list?
           noFixedAddress = false,
           startDate = LocalDate.now(),
-          endDate = if (building.active.not()) { LocalDate.now() } else { null }, // TODO updating an inactive court building will update the endDate to today - we don't have the old prison address and so cannot tell if it was already inactive
+          endDate = if (building.active.not()) { LocalDate.now() } else { null }, // Note that if we deleted and recreated the address we lose the original end date
           active = building.active,
           comment = null,
           phones = building.contacts.map { phone ->
