@@ -509,7 +509,11 @@ class CourtRegisterUpdateServiceTest {
           generatePrisonCourt().copy(
             addresses = listOf(
               addressFromPrisonSystem().copy(),
-              addressFromPrisonSystem().copy(addressId = 987L, street = "second building street")
+              addressFromPrisonSystem().copy(
+                addressId = 987L,
+                street = "second building street",
+                endDate = LocalDate.now().minusDays(1)
+              )
             )
           )
         )
