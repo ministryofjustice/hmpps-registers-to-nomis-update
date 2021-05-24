@@ -12,6 +12,8 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.ArgumentMatchers.anyLong
+import org.mockito.ArgumentMatchers.anyString
 import uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.config.GsonConfig
 import uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.model.CourtUpdate
 import java.time.LocalDate
@@ -439,15 +441,21 @@ class CourtRegisterUpdateServiceTest {
     }
 
     @Nested
-    inner class MultipleExistingBuildings {
+    inner class AdditionalExistingBuilding {
 
       @Test
       fun `prison court address active - register court address active - should not change prison address end date`() {
         whenever(prisonService.getCourtInformation(eq("SHFCC"))).thenReturn(
+          generatePrisonCourt().copy(addresses = listOf(addressFromPrisonSystem().copy()))
+        )
+        whenever(prisonService.getCourtInformation(eq("SHFCC1"))).thenReturn(
           generatePrisonCourt().copy(
+            agencyId = "SHFCC1",
             addresses = listOf(
-              addressFromPrisonSystem().copy(),
-              addressFromPrisonSystem().copy(addressId = 987L, street = "second building street")
+              addressFromPrisonSystem().copy(
+                addressId = 987L,
+                street = "second building street"
+              )
             )
           )
         )
@@ -456,28 +464,30 @@ class CourtRegisterUpdateServiceTest {
             .copy(
               buildings = listOf(
                 addressFromCourtRegister().copy(),
-                addressFromCourtRegister().copy(street = "second building street has changed")
+                addressFromCourtRegister().copy(id = 2L, subCode = "SHFCC1", street = "second building street")
               )
             )
         )
 
         service.updateCourtDetails(CourtUpdate("SHFCC"))
 
-        verify(prisonService).removeAddress("SHFCC", 987L)
-        verify(prisonService).insertAddress(
-          eq("SHFCC"),
-          check {
-            assertThat(it.endDate).isNull()
+        verify(prisonService).updateCourt(
+          check { savedCourt ->
+            assertThat(savedCourt.addresses.find { it.addressId == 987L }!!.endDate).isNull()
           }
         )
+        prisonService.verifyNoFurtherUpdates()
       }
 
       @Test
       fun `prison court address active - register court address NOT active - should change prison address end date to today`() {
         whenever(prisonService.getCourtInformation(eq("SHFCC"))).thenReturn(
+          generatePrisonCourt().copy(addresses = listOf(addressFromPrisonSystem().copy()))
+        )
+        whenever(prisonService.getCourtInformation(eq("SHFCC1"))).thenReturn(
           generatePrisonCourt().copy(
+            agencyId = "SHFCC1",
             addresses = listOf(
-              addressFromPrisonSystem().copy(),
               addressFromPrisonSystem().copy(addressId = 987L, street = "second building street")
             )
           )
@@ -487,28 +497,35 @@ class CourtRegisterUpdateServiceTest {
             .copy(
               buildings = listOf(
                 addressFromCourtRegister().copy(),
-                addressFromCourtRegister().copy(street = "second building street has changed", active = false)
+                addressFromCourtRegister().copy(
+                  id = 2L,
+                  subCode = "SHFCC1",
+                  street = "second building street",
+                  active = false
+                )
               )
             )
         )
 
         service.updateCourtDetails(CourtUpdate("SHFCC"))
 
-        verify(prisonService).removeAddress("SHFCC", 987L)
-        verify(prisonService).insertAddress(
-          eq("SHFCC"),
-          check {
-            assertThat(it.endDate).isEqualTo(LocalDate.now())
+        verify(prisonService).updateCourt(
+          check { savedCourt ->
+            assertThat(savedCourt.addresses.find { it.addressId == 987L }?.endDate).isEqualTo(LocalDate.now())
           }
         )
+        prisonService.verifyNoFurtherUpdates()
       }
 
       @Test
       fun `prison court address NOT active - register court address active - should change prison address end date to null`() {
         whenever(prisonService.getCourtInformation(eq("SHFCC"))).thenReturn(
+          generatePrisonCourt().copy(addresses = listOf(addressFromPrisonSystem().copy()))
+        )
+        whenever(prisonService.getCourtInformation(eq("SHFCC1"))).thenReturn(
           generatePrisonCourt().copy(
+            agencyId = "SHFCC1",
             addresses = listOf(
-              addressFromPrisonSystem().copy(),
               addressFromPrisonSystem().copy(
                 addressId = 987L,
                 street = "second building street",
@@ -522,28 +539,30 @@ class CourtRegisterUpdateServiceTest {
             .copy(
               buildings = listOf(
                 addressFromCourtRegister().copy(),
-                addressFromCourtRegister().copy(street = "second building street has changed")
+                addressFromCourtRegister().copy(id = 2L, subCode = "SHFCC1", street = "second building street")
               )
             )
         )
 
         service.updateCourtDetails(CourtUpdate("SHFCC"))
 
-        verify(prisonService).removeAddress("SHFCC", 987L)
-        verify(prisonService).insertAddress(
-          eq("SHFCC"),
-          check {
-            assertThat(it.endDate).isNull()
+        verify(prisonService).updateCourt(
+          check { savedCourt ->
+            assertThat(savedCourt.addresses.find { it.addressId == 987L }!!.endDate).isNull()
           }
         )
+        prisonService.verifyNoFurtherUpdates()
       }
 
       @Test
-      fun `prison court address NOT active - register court address NOT active - changes prison address end date to today`() {
+      fun `prison court address NOT active - register court address NOT active - keeps same prison address end date`() {
         whenever(prisonService.getCourtInformation(eq("SHFCC"))).thenReturn(
+          generatePrisonCourt().copy(addresses = listOf(addressFromPrisonSystem().copy()))
+        )
+        whenever(prisonService.getCourtInformation(eq("SHFCC1"))).thenReturn(
           generatePrisonCourt().copy(
+            agencyId = "SHFCC1",
             addresses = listOf(
-              addressFromPrisonSystem().copy(),
               addressFromPrisonSystem().copy(
                 addressId = 987L,
                 street = "second building street",
@@ -557,20 +576,33 @@ class CourtRegisterUpdateServiceTest {
             .copy(
               buildings = listOf(
                 addressFromCourtRegister().copy(),
-                addressFromCourtRegister().copy(street = "second building street has changed", active = false)
+                addressFromCourtRegister().copy(
+                  id = 2L,
+                  subCode = "SHFCC1",
+                  street = "second building street",
+                  active = false
+                )
               )
             )
         )
 
         service.updateCourtDetails(CourtUpdate("SHFCC"))
 
-        verify(prisonService).removeAddress("SHFCC", 987L)
-        verify(prisonService).insertAddress(
-          eq("SHFCC"),
-          check {
-            assertThat(it.endDate).isEqualTo(LocalDate.now()) // This is strange that we reset the end date to today but in fact we have lost the original end date - a small price to pay to avoid a crazy and complicated address matching algorithm.
+        verify(prisonService).updateCourt(
+          check { savedCourt ->
+            assertThat(savedCourt.addresses.find { it.addressId == 987L }?.endDate).isEqualTo(
+              LocalDate.now().minusDays(1)
+            )
           }
         )
+        prisonService.verifyNoFurtherUpdates()
+      }
+
+      private fun PrisonService.verifyNoFurtherUpdates() {
+        verify(this, times(0)).insertAddress(anyString(), any())
+        verify(this, times(0)).updateAddress(anyString(), any())
+        verify(this, times(0)).removeAddress(anyString(), anyLong())
+        verify(this, times(0)).insertCourt(any())
       }
     }
   }

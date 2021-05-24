@@ -168,7 +168,7 @@ class CourtRegisterUpdateService(
     stats: SyncStatistics
   ) {
 
-    val dataPayload = translateToPrisonSystemFormat(newCourtData)
+    val dataPayload = translateToPrisonSystemFormat(newCourtData, currentCourtData)
     if (currentCourtData == null) {
       if (applyChanges) prisonService.insertCourt(dataPayload)
       stats.courts[newCourtData.courtId] = stats.courts[newCourtData.courtId]!!.copy(updateType = INSERT)
@@ -257,7 +257,7 @@ class CourtRegisterUpdateService(
     stats: SyncStatistics,
     applyChanges: Boolean
   ): Long? {
-    val dataPayload = translateToPrisonSystemFormat(updatedAddress)
+    val dataPayload = translateToPrisonSystemFormat(updatedAddress, currentAddress)
     if (dataPayload.addressId == null) {
       val addressId = if (applyChanges) prisonService.insertAddress(courtId, dataPayload).addressId else null
       stats.courts[courtId] = stats.courts[courtId]!!.copy(
@@ -280,7 +280,7 @@ class CourtRegisterUpdateService(
     return dataPayload.addressId
   }
 
-  private fun translateToPrisonSystemFormat(courtData: CourtDataToSync) =
+  private fun translateToPrisonSystemFormat(courtData: CourtDataToSync, oldCourtData: CourtDataToSync?) =
     CourtFromPrisonSystem(
       courtData.courtId,
       courtData.description,
@@ -289,32 +289,45 @@ class CourtRegisterUpdateService(
       courtData.active,
       courtData.courtType,
       courtData.deactivationDate,
-      courtData.addresses.map {
-        addressFromPrisonSystem(it)
+      courtData.addresses.map { newAddress ->
+        addressFromPrisonSystem(
+          newAddress,
+          oldCourtData?.addresses?.firstOrNull { oldAddress ->
+            newAddress.addressId == oldAddress.addressId
+          }
+        )
       }
     )
 
-  private fun addressFromPrisonSystem(it: AddressDataToSync) =
-    AddressFromPrisonSystem(
-      addressId = it.addressId,
-      addressType = it.addressType?.code,
-      premise = it.premise,
-      street = it.street,
-      locality = it.locality,
-      town = it.town?.code,
-      postalCode = it.postalCode,
-      county = it.county?.code,
-      country = it.country?.code,
-      primary = it.primary,
-      noFixedAddress = it.noFixedAddress,
-      startDate = it.startDate,
-      endDate = it.endDate,
-      comment = it.comment,
-      phones = it.phones.toList()
+  private fun addressFromPrisonSystem(newAddress: AddressDataToSync, oldAddress: AddressDataToSync?): AddressFromPrisonSystem {
+    fun recentlyClosed() = newAddress.active?.not()?.and(oldAddress?.endDate == null) ?: false
+    fun recentlyOpened() = newAddress.active?.and(oldAddress?.endDate != null) ?: false
+    fun newEndDate() = when {
+      recentlyClosed() -> LocalDate.now()
+      recentlyOpened() -> null
+      else -> oldAddress?.endDate
+    }
+    return AddressFromPrisonSystem(
+      addressId = newAddress.addressId,
+      addressType = newAddress.addressType?.code,
+      premise = newAddress.premise,
+      street = newAddress.street,
+      locality = newAddress.locality,
+      town = newAddress.town?.code,
+      postalCode = newAddress.postalCode,
+      county = newAddress.county?.code,
+      country = newAddress.country?.code,
+      primary = newAddress.primary,
+      noFixedAddress = newAddress.noFixedAddress,
+      startDate = newAddress.startDate,
+      endDate = newEndDate(),
+      comment = newAddress.comment,
+      phones = newAddress.phones.toList()
     )
+  }
 
-  private fun translateToPrisonSystemFormat(addressData: AddressDataToSync) =
-    addressFromPrisonSystem(addressData)
+  private fun translateToPrisonSystemFormat(addressData: AddressDataToSync, oldAddressData: AddressDataToSync?) =
+    addressFromPrisonSystem(addressData, oldAddressData)
 
   private fun mergeIds(updatedCourtData: CourtDataToSync, legacyCourt: CourtDataToSync?) {
     if (legacyCourt == null) return
@@ -455,17 +468,9 @@ data class AddressDataToSync(
 ) : Comparable<AddressDataToSync> {
 
   fun updateAddressAndPhone(address: AddressDataToSync) {
-    fun recentlyClosed() = address.active?.not()?.and(endDate == null) ?: false
-    fun recentlyOpened() = address.active?.and(endDate != null) ?: false
-    fun newEndDate() = when {
-      recentlyClosed() -> LocalDate.now()
-      recentlyOpened() -> null
-      else -> endDate
-    }
     address.addressId = addressId
     address.primary = primary
     address.startDate = startDate
-    address.endDate = newEndDate()
     address.comment = comment
 
     // update the phones
