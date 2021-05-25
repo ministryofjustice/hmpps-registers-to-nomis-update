@@ -464,16 +464,18 @@ class CourtRegisterUpdateServiceTest {
             .copy(
               buildings = listOf(
                 addressFromCourtRegister().copy(),
-                addressFromCourtRegister().copy(id = 2L, subCode = "SHFCC1", street = "second building street")
+                addressFromCourtRegister().copy(id = 2L, subCode = "SHFCC1", street = "second building street changed to trigger update")
               )
             )
         )
 
         service.updateCourtDetails(CourtUpdate("SHFCC"))
 
-        verify(prisonService).updateCourt(
-          check { savedCourt ->
-            assertThat(savedCourt.addresses.find { it.addressId == 987L }!!.endDate).isNull()
+        verify(prisonService).updateAddress(
+          eq("SHFCC1"),
+          check { newAddress ->
+            assertThat(newAddress.addressId).isEqualTo(987L)
+            assertThat(newAddress.endDate).isNull()
           }
         )
         prisonService.verifyNoFurtherUpdates()
@@ -509,9 +511,11 @@ class CourtRegisterUpdateServiceTest {
 
         service.updateCourtDetails(CourtUpdate("SHFCC"))
 
-        verify(prisonService).updateCourt(
-          check { savedCourt ->
-            assertThat(savedCourt.addresses.find { it.addressId == 987L }?.endDate).isEqualTo(LocalDate.now())
+        verify(prisonService).updateAddress(
+          eq("SHFCC1"),
+          check { newAddress ->
+            assertThat(newAddress.addressId).isEqualTo(987L)
+            assertThat(newAddress.endDate).isEqualTo(LocalDate.now())
           }
         )
         prisonService.verifyNoFurtherUpdates()
@@ -546,9 +550,11 @@ class CourtRegisterUpdateServiceTest {
 
         service.updateCourtDetails(CourtUpdate("SHFCC"))
 
-        verify(prisonService).updateCourt(
-          check { savedCourt ->
-            assertThat(savedCourt.addresses.find { it.addressId == 987L }!!.endDate).isNull()
+        verify(prisonService).updateAddress(
+          eq("SHFCC1"),
+          check { newAddress ->
+            assertThat(newAddress.addressId).isEqualTo(987L)
+            assertThat(newAddress.endDate).isNull()
           }
         )
         prisonService.verifyNoFurtherUpdates()
@@ -588,11 +594,11 @@ class CourtRegisterUpdateServiceTest {
 
         service.updateCourtDetails(CourtUpdate("SHFCC"))
 
-        verify(prisonService).updateCourt(
-          check { savedCourt ->
-            assertThat(savedCourt.addresses.find { it.addressId == 987L }?.endDate).isEqualTo(
-              LocalDate.now().minusDays(1)
-            )
+        verify(prisonService).updateAddress(
+          eq("SHFCC1"),
+          check { newAddress ->
+            assertThat(newAddress.addressId).isEqualTo(987L)
+            assertThat(newAddress.endDate).isEqualTo(LocalDate.now().minusDays(1))
           }
         )
         prisonService.verifyNoFurtherUpdates()
@@ -600,9 +606,7 @@ class CourtRegisterUpdateServiceTest {
 
       private fun PrisonService.verifyNoFurtherUpdates() {
         verify(this, times(0)).insertAddress(anyString(), any())
-        verify(this, times(0)).updateAddress(anyString(), any())
         verify(this, times(0)).removeAddress(anyString(), anyLong())
-        verify(this, times(0)).insertCourt(any())
       }
     }
   }
