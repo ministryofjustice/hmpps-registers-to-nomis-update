@@ -515,6 +515,7 @@ data class AddressDataToSync(
     if (county != other.county) return false
     if (country != other.country) return false
     if (primary != other.primary) return false
+    if (endDate != other.endDate) return false
 
     return true
   }
