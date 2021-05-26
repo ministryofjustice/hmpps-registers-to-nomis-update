@@ -68,8 +68,7 @@ data class BuildingDto(
   val county: String?,
   val postcode: String?,
   val country: String?,
-  val contacts: List<ContactDto> = listOf(),
-  val active: Boolean
+  val contacts: List<ContactDto> = listOf()
 )
 
 data class ContactDto(
