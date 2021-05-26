@@ -102,8 +102,7 @@ class CourtRegisterSyncServiceTest {
         listOf(
           ContactDto(1L, "SHFCC", 1L, "TEL", "0114 1232311"),
           ContactDto(2L, "SHFCC", 1L, "FAX", "0114 1232312")
-        ),
-        true
+        )
       )
     )
   )
