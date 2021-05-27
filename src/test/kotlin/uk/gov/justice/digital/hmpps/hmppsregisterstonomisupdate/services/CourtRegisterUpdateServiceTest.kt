@@ -2,12 +2,18 @@ package uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.services
 
 import com.microsoft.applicationinsights.TelemetryClient
 import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.times
+import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.ArgumentMatchers.anyLong
+import org.mockito.ArgumentMatchers.anyString
 import uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.config.GsonConfig
 import uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.model.CourtUpdate
 import java.time.LocalDate
@@ -23,7 +29,14 @@ class CourtRegisterUpdateServiceTest {
 
   @BeforeEach
   fun before() {
-    service = CourtRegisterUpdateService(courtRegisterService, prisonService, prisonReferenceDataService, telemetryClient, true, GsonConfig().gson())
+    service = CourtRegisterUpdateService(
+      courtRegisterService,
+      prisonService,
+      prisonReferenceDataService,
+      telemetryClient,
+      true,
+      GsonConfig().gson()
+    )
 
     whenever(prisonReferenceDataService.getRefCode(eq("ADDR_TYPE"), eq("Business Address"), eq(false))).thenReturn(
       ReferenceCode("ADDR_TYPE", "BUS", "Business Address", "Y", null)
@@ -74,8 +87,20 @@ class CourtRegisterUpdateServiceTest {
         listOf(
           addressFromPrisonSystem(),
           AddressFromPrisonSystem(
-            57L, "Business Address", null, "Another Sheffield Court Building - Part of main", "Law Street", "Kelham Island", "Sheffield",
-            "S1 5TT", "South Yorkshire", "England", false, false, LocalDate.now(), null,
+            57L,
+            "Business Address",
+            null,
+            "Another Sheffield Court Building - Part of main",
+            "Law Street",
+            "Kelham Island",
+            "Sheffield",
+            "S1 5TT",
+            "South Yorkshire",
+            "England",
+            false,
+            false,
+            LocalDate.now(),
+            null,
             listOf(PhoneFromPrisonSystem(22432L, "0114 1232318", "BUS", null))
           )
         )
@@ -129,8 +154,20 @@ class CourtRegisterUpdateServiceTest {
         listOf(
           addressFromPrisonSystem(),
           AddressFromPrisonSystem(
-            57L, "Business Address", null, "Another Sheffield Court Building - Part of main", "Law Street", "Kelham Island", "Sheffield",
-            "S1 5TT", "South Yorkshire", "England", false, false, LocalDate.now(), null,
+            57L,
+            "Business Address",
+            null,
+            "Another Sheffield Court Building - Part of main",
+            "Law Street",
+            "Kelham Island",
+            "Sheffield",
+            "S1 5TT",
+            "South Yorkshire",
+            "England",
+            false,
+            false,
+            LocalDate.now(),
+            null,
             listOf(PhoneFromPrisonSystem(22432L, "0114 1232318", "BUS", null))
           )
         )
@@ -229,7 +266,10 @@ class CourtRegisterUpdateServiceTest {
           AddressFromPrisonSystem(
             56L, "Business Address", null, "Main Sheffield Court Building", "Law Street", "Kelham Island", "Sheffield",
             "S1 5TT", "South Yorkshire", "England", true, false, LocalDate.now(), null,
-            listOf(PhoneFromPrisonSystem(23432L, "0114 1232311", "BUS", null), PhoneFromPrisonSystem(23437L, "0114 1232317", "FAX", null))
+            listOf(
+              PhoneFromPrisonSystem(23432L, "0114 1232311", "BUS", null),
+              PhoneFromPrisonSystem(23437L, "0114 1232317", "FAX", null)
+            )
           )
         )
       )
@@ -256,8 +296,20 @@ class CourtRegisterUpdateServiceTest {
         "Sheffield Crown Court in Sheffield", "CRT", true, "CC", null,
         listOf(
           AddressFromPrisonSystem(
-            56L, "Business Address", null, "Main Sheffield Court Building", "Lawson Street", "Kelham Island", "Sheffield",
-            "S1 5TT", "South Yorkshire", "England", true, false, LocalDate.now(), null,
+            56L,
+            "Business Address",
+            null,
+            "Main Sheffield Court Building",
+            "Lawson Street",
+            "Kelham Island",
+            "Sheffield",
+            "S1 5TT",
+            "South Yorkshire",
+            "England",
+            true,
+            false,
+            LocalDate.now(),
+            null,
             phoneList()
           )
         )
@@ -276,114 +328,428 @@ class CourtRegisterUpdateServiceTest {
     assertThat(courtStats.numberAddressesUpdated).isEqualTo(1)
   }
 
-  private fun addressFromPrisonSystem() =
-    AddressFromPrisonSystem(
-      56L, "Business Address", null, "Main Sheffield Court Building", "Law Street", "Kelham Island", "Sheffield",
-      "S1 5TT", "South Yorkshire", "England", true, false, LocalDate.now(), null,
-      phoneList()
-    )
+  @Nested
+  inner class ActiveBuildings {
 
-  private fun phoneList() =
-    listOf(
-      PhoneFromPrisonSystem(23432L, "0114 1232311", "BUS", null),
-      PhoneFromPrisonSystem(23437L, "0114 1232312", "FAX", null)
-    )
+    @Nested
+    inner class SingleExistingBuilding {
 
-  private fun generateCourtRegisterEntry() = CourtDto(
-    "SHFCC",
-    "Sheffield Crown Court",
-    "Sheffield Crown Court in Sheffield",
-    CourtTypeDto("CRN", "Crown Court"),
-    true,
-    listOf(
-      BuildingDto(
-        1L,
-        "SHFCC",
-        null,
-        "Main Sheffield Court Building",
-        "Law Street",
-        "Kelham Island",
-        "Sheffield",
-        "South Yorkshire",
-        "S1 5TT",
-        "England",
-        listOf(
-          ContactDto(1L, "SHFCC", 1L, "TEL", "0114 1232311"),
-          ContactDto(2L, "SHFCC", 1L, "FAX", "0114 1232312")
+      @Test
+      fun `prison court address active - register court address active - should NOT change prison address end date`() {
+        whenever(prisonService.getCourtInformation(eq("SHFCC"))).thenReturn(generatePrisonCourt())
+        whenever(courtRegisterService.getCourtInfoFromRegister(eq("SHFCC"))).thenReturn(
+          generateCourtRegisterEntry().copy(courtName = "new court name")
         )
-      )
-    )
-  )
 
-  private fun generateCourtRegisterEntryMultipleLocations() = CourtDto(
-    "SHFCC",
-    "Sheffield Crown Court",
-    "Sheffield Crown Court in Sheffield",
-    CourtTypeDto("CRN", "Crown Court"),
-    true,
-    listOf(
-      BuildingDto(
-        1L,
-        "SHFCC",
-        null,
-        "Main Sheffield Court Building",
-        "Law Street",
-        "Kelham Island",
-        "Sheffield",
-        "South Yorkshire",
-        "S1 5TT",
-        "England",
-        listOf(
-          ContactDto(1L, "SHFCC", 1L, "TEL", "0114 1232311"),
-          ContactDto(2L, "SHFCC", 1L, "FAX", "0114 1232312")
+        service.updateCourtDetails(CourtUpdate("SHFCC"))
+
+        verify(prisonService).updateCourt(
+          check {
+            assertThat(it.addresses[0].endDate).isNull()
+          }
         )
-      ),
-      BuildingDto(
-        11L,
-        "SHFCC",
-        "SHFCC1",
-        "Annex 1",
-        "Law Street",
-        "Kelham Island",
-        "Sheffield",
-        "South Yorkshire",
-        "S1 5TT",
-        "England",
-        listOf(
-          ContactDto(12L, "SHFCC", 11L, "TEL", "0114 1232812")
+      }
+
+      @Test
+      fun `prison court address NOT active - register court address NOT active - should not change prison address end date`() {
+        whenever(prisonService.getCourtInformation(eq("SHFCC"))).thenReturn(
+          generatePrisonCourt().copy(
+            addresses = listOf(
+              addressFromPrisonSystem().copy(endDate = LocalDate.now().minusDays(1))
+            )
+          )
         )
-      ),
-      BuildingDto(
-        31L,
-        "SHFCC",
-        "SHFCC2",
-        "Queen Mary Court Annex 2",
-        "Law Street",
-        "Kelham Island",
-        "Sheffield",
-        "South Yorkshire",
-        "S1 5TT",
-        "England",
-        listOf(
-          ContactDto(31L, "SHFCC", 31L, "TEL", "0114 1932311"),
-          ContactDto(32L, "SHFCC", 31L, "FAX", "0114 1932312")
+        whenever(courtRegisterService.getCourtInfoFromRegister(eq("SHFCC"))).thenReturn(
+          generateCourtRegisterEntry()
+            .copy(courtName = "new court name", buildings = listOf(addressFromCourtRegister().copy(active = false)))
         )
-      ),
-      BuildingDto(
-        41L,
-        "SHFCC",
-        null,
-        "Another Sheffield Court Building - Part of main",
-        "Law Street",
-        "Kelham Island",
-        "Sheffield",
-        "South Yorkshire",
-        "S1 5TT",
-        "England",
-        listOf(
-          ContactDto(41L, "SHFCC", 41L, "TEL", "0114 1232318"),
+
+        service.updateCourtDetails(CourtUpdate("SHFCC"))
+
+        verify(prisonService).updateCourt(
+          check {
+            assertThat(it.addresses[0].endDate).isEqualTo(LocalDate.now().minusDays(1))
+          }
         )
-      )
-    )
-  )
+      }
+
+      @Test
+      fun `prison court address active - register court address NOT active - should set prison address end date`() {
+        whenever(prisonService.getCourtInformation(eq("SHFCC"))).thenReturn(generatePrisonCourt())
+        whenever(courtRegisterService.getCourtInfoFromRegister(eq("SHFCC"))).thenReturn(
+          generateCourtRegisterEntry()
+            .copy(courtName = "new court name", buildings = listOf(addressFromCourtRegister().copy(active = false)))
+        )
+
+        service.updateCourtDetails(CourtUpdate("SHFCC"))
+
+        verify(prisonService).updateCourt(
+          check {
+            assertThat(it.addresses[0].endDate).isEqualTo(LocalDate.now())
+          }
+        )
+      }
+
+      @Test
+      fun `prison court address NOT active - register court address active - should set prison address end date null`() {
+        whenever(prisonService.getCourtInformation(eq("SHFCC"))).thenReturn(
+          generatePrisonCourt().copy(
+            addresses = listOf(
+              addressFromPrisonSystem().copy(endDate = LocalDate.now().minusDays(1))
+            )
+          )
+        )
+        whenever(courtRegisterService.getCourtInfoFromRegister(eq("SHFCC"))).thenReturn(
+          generateCourtRegisterEntry().copy(courtName = "new court name")
+        )
+
+        service.updateCourtDetails(CourtUpdate("SHFCC"))
+
+        verify(prisonService).updateCourt(
+          check {
+            assertThat(it.addresses[0].endDate).isNull()
+          }
+        )
+      }
+    }
+
+    @Nested
+    inner class NewBuildingAdded {
+
+      @Test
+      fun `new register court address active - should set NEW prison address end date null`() {
+        whenever(prisonService.getCourtInformation(eq("SHFCC"))).thenReturn(generatePrisonCourt())
+        whenever(courtRegisterService.getCourtInfoFromRegister(eq("SHFCC"))).thenReturn(
+          generateCourtRegisterEntry()
+            .copy(
+              buildings = listOf(
+                addressFromCourtRegister().copy(),
+                addressFromCourtRegister().copy(street = "New building street")
+              )
+            )
+        )
+
+        service.updateCourtDetails(CourtUpdate("SHFCC"))
+
+        verify(prisonService).insertAddress(
+          eq("SHFCC"),
+          check {
+            assertThat(it.endDate).isNull()
+          }
+        )
+      }
+    }
+
+    @Nested
+    inner class AdditionalExistingBuilding {
+
+      @Test
+      fun `prison court address active - register court address active - should not change prison address end date`() {
+        whenever(prisonService.getCourtInformation(eq("SHFCC"))).thenReturn(
+          generatePrisonCourt().copy(addresses = listOf(addressFromPrisonSystem().copy()))
+        )
+        whenever(prisonService.getCourtInformation(eq("SHFCC1"))).thenReturn(
+          generatePrisonCourt().copy(
+            agencyId = "SHFCC1",
+            addresses = listOf(
+              addressFromPrisonSystem().copy(
+                addressId = 987L,
+                street = "second building street"
+              )
+            )
+          )
+        )
+        whenever(courtRegisterService.getCourtInfoFromRegister(eq("SHFCC"))).thenReturn(
+          generateCourtRegisterEntry()
+            .copy(
+              buildings = listOf(
+                addressFromCourtRegister().copy(),
+                addressFromCourtRegister().copy(id = 2L, subCode = "SHFCC1", street = "second building street changed to trigger update")
+              )
+            )
+        )
+
+        service.updateCourtDetails(CourtUpdate("SHFCC"))
+
+        verify(prisonService).updateAddress(
+          eq("SHFCC1"),
+          check { newAddress ->
+            assertThat(newAddress.addressId).isEqualTo(987L)
+            assertThat(newAddress.endDate).isNull()
+          }
+        )
+        prisonService.verifyNoFurtherUpdates()
+      }
+
+      @Test
+      fun `prison court address active - register court address NOT active - should change prison address end date to today`() {
+        whenever(prisonService.getCourtInformation(eq("SHFCC"))).thenReturn(
+          generatePrisonCourt().copy(addresses = listOf(addressFromPrisonSystem().copy()))
+        )
+        whenever(prisonService.getCourtInformation(eq("SHFCC1"))).thenReturn(
+          generatePrisonCourt().copy(
+            agencyId = "SHFCC1",
+            addresses = listOf(
+              addressFromPrisonSystem().copy(addressId = 987L, street = "second building street")
+            )
+          )
+        )
+        whenever(courtRegisterService.getCourtInfoFromRegister(eq("SHFCC"))).thenReturn(
+          generateCourtRegisterEntry()
+            .copy(
+              buildings = listOf(
+                addressFromCourtRegister().copy(),
+                addressFromCourtRegister().copy(
+                  id = 2L,
+                  subCode = "SHFCC1",
+                  street = "second building street",
+                  active = false
+                )
+              )
+            )
+        )
+
+        service.updateCourtDetails(CourtUpdate("SHFCC"))
+
+        verify(prisonService).updateAddress(
+          eq("SHFCC1"),
+          check { newAddress ->
+            assertThat(newAddress.addressId).isEqualTo(987L)
+            assertThat(newAddress.endDate).isEqualTo(LocalDate.now())
+          }
+        )
+        prisonService.verifyNoFurtherUpdates()
+      }
+
+      @Test
+      fun `prison court address NOT active - register court address active - should change prison address end date to null`() {
+        whenever(prisonService.getCourtInformation(eq("SHFCC"))).thenReturn(
+          generatePrisonCourt().copy(addresses = listOf(addressFromPrisonSystem().copy()))
+        )
+        whenever(prisonService.getCourtInformation(eq("SHFCC1"))).thenReturn(
+          generatePrisonCourt().copy(
+            agencyId = "SHFCC1",
+            addresses = listOf(
+              addressFromPrisonSystem().copy(
+                addressId = 987L,
+                street = "second building street",
+                endDate = LocalDate.now().minusDays(1)
+              )
+            )
+          )
+        )
+        whenever(courtRegisterService.getCourtInfoFromRegister(eq("SHFCC"))).thenReturn(
+          generateCourtRegisterEntry()
+            .copy(
+              buildings = listOf(
+                addressFromCourtRegister().copy(),
+                addressFromCourtRegister().copy(id = 2L, subCode = "SHFCC1", street = "second building street")
+              )
+            )
+        )
+
+        service.updateCourtDetails(CourtUpdate("SHFCC"))
+
+        verify(prisonService).updateAddress(
+          eq("SHFCC1"),
+          check { newAddress ->
+            assertThat(newAddress.addressId).isEqualTo(987L)
+            assertThat(newAddress.endDate).isNull()
+          }
+        )
+        prisonService.verifyNoFurtherUpdates()
+      }
+
+      @Test
+      fun `prison court address NOT active - register court address NOT active - keeps same prison address end date`() {
+        whenever(prisonService.getCourtInformation(eq("SHFCC"))).thenReturn(
+          generatePrisonCourt().copy(addresses = listOf(addressFromPrisonSystem().copy()))
+        )
+        whenever(prisonService.getCourtInformation(eq("SHFCC1"))).thenReturn(
+          generatePrisonCourt().copy(
+            agencyId = "SHFCC1",
+            addresses = listOf(
+              addressFromPrisonSystem().copy(
+                addressId = 987L,
+                street = "second building street",
+                endDate = LocalDate.now().minusDays(1)
+              )
+            )
+          )
+        )
+        whenever(courtRegisterService.getCourtInfoFromRegister(eq("SHFCC"))).thenReturn(
+          generateCourtRegisterEntry()
+            .copy(
+              buildings = listOf(
+                addressFromCourtRegister().copy(),
+                addressFromCourtRegister().copy(
+                  id = 2L,
+                  subCode = "SHFCC1",
+                  street = "second building street",
+                  active = false
+                )
+              )
+            )
+        )
+
+        service.updateCourtDetails(CourtUpdate("SHFCC"))
+
+        verify(prisonService).updateAddress(
+          eq("SHFCC1"),
+          check { newAddress ->
+            assertThat(newAddress.addressId).isEqualTo(987L)
+            assertThat(newAddress.endDate).isEqualTo(LocalDate.now().minusDays(1))
+          }
+        )
+        prisonService.verifyNoFurtherUpdates()
+      }
+
+      private fun PrisonService.verifyNoFurtherUpdates() {
+        verify(this, times(0)).insertAddress(anyString(), any())
+        verify(this, times(0)).removeAddress(anyString(), anyLong())
+      }
+    }
+  }
 }
+
+private fun addressFromPrisonSystem() =
+  AddressFromPrisonSystem(
+    56L, "Business Address", null, "Main Sheffield Court Building", "Law Street", "Kelham Island", "Sheffield",
+    "S1 5TT", "South Yorkshire", "England", true, false, LocalDate.now(), null,
+    phoneList()
+  )
+
+private fun addressFromCourtRegister() =
+  BuildingDto(
+    1L,
+    "SHFCC",
+    null,
+    "Main Sheffield Court Building",
+    "Law Street",
+    "Kelham Island",
+    "Sheffield",
+    "South Yorkshire",
+    "S1 5TT",
+    "England",
+    listOf(
+      ContactDto(1L, "SHFCC", 1L, "TEL", "0114 1232311"),
+      ContactDto(2L, "SHFCC", 1L, "FAX", "0114 1232312")
+    ),
+    true
+  )
+
+private fun phoneList() =
+  listOf(
+    PhoneFromPrisonSystem(23432L, "0114 1232311", "BUS", null),
+    PhoneFromPrisonSystem(23437L, "0114 1232312", "FAX", null)
+  )
+
+private fun generatePrisonCourt() =
+  CourtFromPrisonSystem(
+    "SHFCC", "Sheffield Crown Court",
+    "Sheffield Crown Court in Sheffield", "CRT", true, "CC", null,
+    listOf(addressFromPrisonSystem())
+  )
+
+private fun generateCourtRegisterEntry() = CourtDto(
+  "SHFCC",
+  "Sheffield Crown Court",
+  "Sheffield Crown Court in Sheffield",
+  CourtTypeDto("CRN", "Crown Court"),
+  true,
+  listOf(
+    BuildingDto(
+      1L,
+      "SHFCC",
+      null,
+      "Main Sheffield Court Building",
+      "Law Street",
+      "Kelham Island",
+      "Sheffield",
+      "South Yorkshire",
+      "S1 5TT",
+      "England",
+      listOf(
+        ContactDto(1L, "SHFCC", 1L, "TEL", "0114 1232311"),
+        ContactDto(2L, "SHFCC", 1L, "FAX", "0114 1232312")
+      ),
+      true
+    )
+  )
+)
+
+private fun generateCourtRegisterEntryMultipleLocations() = CourtDto(
+  "SHFCC",
+  "Sheffield Crown Court",
+  "Sheffield Crown Court in Sheffield",
+  CourtTypeDto("CRN", "Crown Court"),
+  true,
+  listOf(
+    BuildingDto(
+      1L,
+      "SHFCC",
+      null,
+      "Main Sheffield Court Building",
+      "Law Street",
+      "Kelham Island",
+      "Sheffield",
+      "South Yorkshire",
+      "S1 5TT",
+      "England",
+      listOf(
+        ContactDto(1L, "SHFCC", 1L, "TEL", "0114 1232311"),
+        ContactDto(2L, "SHFCC", 1L, "FAX", "0114 1232312")
+      ),
+      true
+    ),
+    BuildingDto(
+      11L,
+      "SHFCC",
+      "SHFCC1",
+      "Annex 1",
+      "Law Street",
+      "Kelham Island",
+      "Sheffield",
+      "South Yorkshire",
+      "S1 5TT",
+      "England",
+      listOf(
+        ContactDto(12L, "SHFCC", 11L, "TEL", "0114 1232812")
+      ),
+      true
+    ),
+    BuildingDto(
+      31L,
+      "SHFCC",
+      "SHFCC2",
+      "Queen Mary Court Annex 2",
+      "Law Street",
+      "Kelham Island",
+      "Sheffield",
+      "South Yorkshire",
+      "S1 5TT",
+      "England",
+      listOf(
+        ContactDto(31L, "SHFCC", 31L, "TEL", "0114 1932311"),
+        ContactDto(32L, "SHFCC", 31L, "FAX", "0114 1932312")
+      ),
+      true
+    ),
+    BuildingDto(
+      41L,
+      "SHFCC",
+      null,
+      "Another Sheffield Court Building - Part of main",
+      "Law Street",
+      "Kelham Island",
+      "Sheffield",
+      "South Yorkshire",
+      "S1 5TT",
+      "England",
+      listOf(
+        ContactDto(41L, "SHFCC", 41L, "TEL", "0114 1232318"),
+      ),
+      true
+    )
+  )
+)
