@@ -153,6 +153,7 @@ class CourtRegisterUpdateService(
           noFixedAddress = address.noFixedAddress,
           startDate = address.startDate,
           endDate = address.endDate,
+          active = address.endDate == null,
           comment = address.comment,
           phones = address.phones.map { phone ->
             PhoneFromPrisonSystem(phone.phoneId, phone.number, phone.type, phone.ext)
@@ -167,7 +168,7 @@ class CourtRegisterUpdateService(
     stats: SyncStatistics
   ) {
 
-    val dataPayload = translateToPrisonSystemFormat(newCourtData)
+    val dataPayload = translateToPrisonSystemFormat(newCourtData, currentCourtData)
     if (currentCourtData == null) {
       if (applyChanges) prisonService.insertCourt(dataPayload)
       stats.courts[newCourtData.courtId] = stats.courts[newCourtData.courtId]!!.copy(updateType = INSERT)
@@ -256,7 +257,7 @@ class CourtRegisterUpdateService(
     stats: SyncStatistics,
     applyChanges: Boolean
   ): Long? {
-    val dataPayload = translateToPrisonSystemFormat(updatedAddress)
+    val dataPayload = translateToPrisonSystemFormat(updatedAddress, currentAddress)
     if (dataPayload.addressId == null) {
       val addressId = if (applyChanges) prisonService.insertAddress(courtId, dataPayload).addressId else null
       stats.courts[courtId] = stats.courts[courtId]!!.copy(
@@ -279,7 +280,7 @@ class CourtRegisterUpdateService(
     return dataPayload.addressId
   }
 
-  private fun translateToPrisonSystemFormat(courtData: CourtDataToSync) =
+  private fun translateToPrisonSystemFormat(courtData: CourtDataToSync, oldCourtData: CourtDataToSync?) =
     CourtFromPrisonSystem(
       courtData.courtId,
       courtData.description,
@@ -288,32 +289,45 @@ class CourtRegisterUpdateService(
       courtData.active,
       courtData.courtType,
       courtData.deactivationDate,
-      courtData.addresses.map {
-        addressFromPrisonSystem(it)
+      courtData.addresses.map { newAddress ->
+        addressFromPrisonSystem(
+          newAddress,
+          oldCourtData?.addresses?.firstOrNull { oldAddress ->
+            newAddress.addressId == oldAddress.addressId
+          }
+        )
       }
     )
 
-  private fun addressFromPrisonSystem(it: AddressDataToSync) =
-    AddressFromPrisonSystem(
-      addressId = it.addressId,
-      addressType = it.addressType?.code,
-      premise = it.premise,
-      street = it.street,
-      locality = it.locality,
-      town = it.town?.code,
-      postalCode = it.postalCode,
-      county = it.county?.code,
-      country = it.country?.code,
-      primary = it.primary,
-      noFixedAddress = it.noFixedAddress,
-      startDate = it.startDate,
-      endDate = it.endDate,
-      comment = it.comment,
-      phones = it.phones.toList()
+  private fun addressFromPrisonSystem(newAddress: AddressDataToSync, oldAddress: AddressDataToSync?): AddressFromPrisonSystem {
+    fun recentlyClosed() = newAddress.active?.not()?.and(oldAddress?.endDate == null) ?: false
+    fun recentlyOpened() = newAddress.active?.and(oldAddress?.endDate != null) ?: false
+    fun newEndDate() = when {
+      recentlyClosed() -> LocalDate.now()
+      recentlyOpened() -> null
+      else -> oldAddress?.endDate
+    }
+    return AddressFromPrisonSystem(
+      addressId = newAddress.addressId,
+      addressType = newAddress.addressType?.code,
+      premise = newAddress.premise,
+      street = newAddress.street,
+      locality = newAddress.locality,
+      town = newAddress.town?.code,
+      postalCode = newAddress.postalCode,
+      county = newAddress.county?.code,
+      country = newAddress.country?.code,
+      primary = newAddress.primary,
+      noFixedAddress = newAddress.noFixedAddress,
+      startDate = newAddress.startDate,
+      endDate = newEndDate(),
+      comment = newAddress.comment,
+      phones = newAddress.phones.toList()
     )
+  }
 
-  private fun translateToPrisonSystemFormat(addressData: AddressDataToSync) =
-    addressFromPrisonSystem(addressData)
+  private fun translateToPrisonSystemFormat(addressData: AddressDataToSync, oldAddressData: AddressDataToSync?) =
+    addressFromPrisonSystem(addressData, oldAddressData)
 
   private fun mergeIds(updatedCourtData: CourtDataToSync, legacyCourt: CourtDataToSync?) {
     if (legacyCourt == null) return
@@ -359,7 +373,8 @@ class CourtRegisterUpdateService(
           primary = building == buildings[0], // first one in the list?
           noFixedAddress = false,
           startDate = LocalDate.now(),
-          endDate = null,
+          endDate = if (building.active.not()) { LocalDate.now() } else { null }, // Note that if we deleted and recreated the address we lose the original end date
+          active = building.active,
           comment = null,
           phones = building.contacts.map { phone ->
             PhoneFromPrisonSystem(null, phone.detail.truncate(40), if (phone.type == "TEL") "BUS" else phone.type, null)
@@ -447,17 +462,15 @@ data class AddressDataToSync(
   val noFixedAddress: Boolean,
   var startDate: LocalDate? = null,
   var endDate: LocalDate? = null,
+  var active: Boolean? = null,
   val phones: SortedSet<PhoneFromPrisonSystem> = sortedSetOf(),
   var comment: String? = null
 ) : Comparable<AddressDataToSync> {
 
-  fun updateAddressAndPhone(
-    address: AddressDataToSync
-  ) {
+  fun updateAddressAndPhone(address: AddressDataToSync) {
     address.addressId = addressId
     address.primary = primary
     address.startDate = startDate
-    address.endDate = endDate
     address.comment = comment
 
     // update the phones
@@ -502,6 +515,7 @@ data class AddressDataToSync(
     if (county != other.county) return false
     if (country != other.country) return false
     if (primary != other.primary) return false
+    if (endDate != other.endDate) return false
 
     return true
   }
