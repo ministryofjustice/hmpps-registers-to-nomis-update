@@ -1,12 +1,6 @@
 server:
   shutdown: immediate
 
-aws:
-  provider: localstack
-
-sqs:
-  endpoint.url: http://localhost:4566
-
 oauth:
   endpoint.url: http://localhost:8090/auth
 

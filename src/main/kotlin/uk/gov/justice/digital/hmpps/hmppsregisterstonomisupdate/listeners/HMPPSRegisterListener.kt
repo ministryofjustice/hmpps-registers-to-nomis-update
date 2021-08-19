@@ -11,21 +11,21 @@ import uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.services.CourtRe
 @Service
 class HMPPSRegisterListener(
   private val courtRegisterUpdateService: CourtRegisterUpdateService,
-  private val gson: Gson
+  private val gson: Gson,
 ) {
 
-  companion object {
+  private companion object {
     val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  @JmsListener(destination = "\${sqs.queue.name}")
+  @JmsListener(destination = "registers", containerFactory = "hmppsQueueContainerFactoryProxy")
   fun onRegisterChange(message: String) {
     val sqsMessage: SQSMessage = gson.fromJson(message, SQSMessage::class.java)
-    log.info("Received message ${sqsMessage.MessageId}")
+    log.info("Received message {}", sqsMessage.MessageId)
     val changeEvent: RegisterChangeEvent = gson.fromJson(sqsMessage.Message, RegisterChangeEvent::class.java)
     when (changeEvent.eventType) {
       "COURT_REGISTER_UPDATE" -> courtRegisterUpdateService.updateCourtDetails(CourtUpdate(courtId = changeEvent.id))
-      else -> log.info("Received a message I wasn't expected $changeEvent")
+      else -> log.info("Received a message I wasn't expecting {}", changeEvent)
     }
   }
 

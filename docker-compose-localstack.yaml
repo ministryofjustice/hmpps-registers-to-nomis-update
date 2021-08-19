@@ -1,17 +1,5 @@
 version: "3"
 services:
-  hmpps-registers-to-nomis-update:
-    build:
-      context: .
-    network_mode: "host"
-    container_name: hmpps-registers-to-nomis-update
-    ports:
-      - "8081:8080"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health/ping"]
-    environment:
-      - SERVER_PORT=8080
-      - SPRING_PROFILES_ACTIVE=dev
   localstack:
     image: localstack/localstack:0.12.10
     networks:
@@ -19,12 +7,12 @@ services:
     container_name: localstack
     ports:
       - "4566-4597:4566-4597"
-      - 8999:8080
     environment:
       - SERVICES=sqs,sns
-      - DEBUG=${DEBUG- }
+      - DATA_DIR=/tmp/localstack/data
       - DOCKER_HOST=unix:///var/run/docker.sock
       - DEFAULT_REGION=eu-west-2
+      - PORT_WEB_UI=${PORT_WEB_UI- }
     volumes:
       - "${TMPDIR:-/tmp/localstack}:/tmp/localstack"
       - "/var/run/docker.sock:/var/run/docker.sock"
