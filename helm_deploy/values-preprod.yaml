@@ -1,37 +1,19 @@
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
+---
+# Environment specific values, override helm_deploy/hmpps-registers-to-nomis-update/values.yaml
 
-replicaCount: 4
+generic-service:
+  replicaCount: 4
+  ingress:
+    host: registers-to-nomis-update-preprod.hmpps.service.justice.gov.uk
 
-image:
-  repository: quay.io/hmpps/hmpps-registers-to-nomis-update
-  tag: latest
-  port: 8080
+  env:
+    OAUTH_ENDPOINT_URL: "https://sign-in-preprod.hmpps.service.justice.gov.uk/auth"
+    PRISON_ENDPOINT_URL: "https://api-preprod.prison.service.justice.gov.uk"
+    COURT_REGISTER_ENDPOINT_URL: "https://court-register-preprod.hmpps.service.justice.gov.uk"
+    # Whether to apply the changes to Nomis
+    APPLY_CHANGES: "false"
+    APPLICATIONINSIGHTS_CONFIGURATION_FILE: applicationinsights.json
 
-ingress:
-  enabled: true
-  enable_whitelist: true
-  hosts:
-    - host: registers-to-nomis-update-preprod.hmpps.service.justice.gov.uk
-      cert_secret: hmpps-registers-to-nomis-update-cert
-  path: /
-
-env:
-  JAVA_OPTS: "-Xmx512m"
-  OAUTH_ENDPOINT_URL: "https://sign-in-preprod.hmpps.service.justice.gov.uk/auth"
-  PRISON_ENDPOINT_URL: "https://api-preprod.prison.service.justice.gov.uk"
-  COURT_REGISTER_ENDPOINT_URL: "https://court-register-preprod.hmpps.service.justice.gov.uk"
-  APPLY_CHANGES: "false"
-  APPLICATIONINSIGHTS_CONFIGURATION_FILE: applicationinsights.json
-
-whitelist:
-  office: "217.33.148.210/32"
-  health-kick: "35.177.252.195/32"
-  mojvpn: "81.134.202.29/32"
-  cloudplatform-live1-1: "35.178.209.113/32"
-  cloudplatform-live1-2: "3.8.51.207/32"
-  cloudplatform-live1-3: "35.177.252.54/32"
-
-# CloudPlatform AlertManager receiver to route promethues alerts to slack
+# CloudPlatform AlertManager receiver to route prometheus alerts to slack
 generic-prometheus-alerts:
   alertSeverity: hmpps_tech_non_prod
