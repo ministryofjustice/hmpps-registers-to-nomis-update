@@ -10,8 +10,6 @@ generic-service:
     OAUTH_ENDPOINT_URL: "https://sign-in-preprod.hmpps.service.justice.gov.uk/auth"
     PRISON_ENDPOINT_URL: "https://api-preprod.prison.service.justice.gov.uk"
     COURT_REGISTER_ENDPOINT_URL: "https://court-register-preprod.hmpps.service.justice.gov.uk"
-    # Whether to apply the changes to Nomis
-    APPLY_CHANGES: "false"
     APPLICATIONINSIGHTS_CONFIGURATION_FILE: applicationinsights.json
 
 # CloudPlatform AlertManager receiver to route prometheus alerts to slack
