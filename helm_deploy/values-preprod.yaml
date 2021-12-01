@@ -4,7 +4,7 @@
 generic-service:
   replicaCount: 4
   ingress:
-    host: registers-to-nomis-update-preprod.hmpps.service.justice.gov.uk
+    host: registers-to-nomis-update-preprod.hmpps.service.justice.gov.ukn    contextColour: green
 
   env:
     OAUTH_ENDPOINT_URL: "https://sign-in-preprod.hmpps.service.justice.gov.uk/auth"
