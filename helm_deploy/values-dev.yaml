@@ -5,7 +5,6 @@ generic-service:
   replicaCount: 2
   ingress:
     host: registers-to-nomis-update-dev.hmpps.service.justice.gov.uk
-    contextColour: green
 
   env:
     OAUTH_ENDPOINT_URL: "https://sign-in-dev.hmpps.service.justice.gov.uk/auth"

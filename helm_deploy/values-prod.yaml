@@ -2,7 +2,6 @@
 # Environment specific values, override helm_deploy/hmpps-registers-to-nomis-update/values.yaml
 
 generic-service:
-  replicaCount: 4
   ingress:
     host: registers-to-nomis-update.hmpps.service.justice.gov.uk
 
