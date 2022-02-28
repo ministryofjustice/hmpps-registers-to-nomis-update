@@ -8,7 +8,10 @@ import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsregisterstonomisupdate.helpers.JwtAuthHelper
 
-@SpringBootTest(webEnvironment = RANDOM_PORT)
+@SpringBootTest(
+  webEnvironment = RANDOM_PORT,
+  properties = ["spring.autoconfigure.exclude=uk.gov.justice.hmpps.sqs.HmppsSqsConfiguration"]
+)
 @ActiveProfiles("test")
 abstract class IntegrationTestBase {
 
