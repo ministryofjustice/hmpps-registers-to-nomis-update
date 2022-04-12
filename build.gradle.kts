@@ -1,5 +1,5 @@
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "4.1.3"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "4.1.4-beta"
   kotlin("plugin.spring") version "1.6.20"
 }
 
@@ -25,7 +25,7 @@ dependencies {
   testImplementation("com.github.tomakehurst:wiremock-standalone:2.27.2")
   testImplementation("org.awaitility:awaitility-kotlin:4.2.0")
   testImplementation("io.jsonwebtoken:jjwt:0.9.1")
-  testImplementation("org.testcontainers:localstack:1.16.3")
+  testImplementation("org.testcontainers:localstack:1.17.0")
 }
 
 java {
