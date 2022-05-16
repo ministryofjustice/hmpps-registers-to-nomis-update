@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  hmpps: ministryofjustice/hmpps@3.14
+  hmpps: ministryofjustice/hmpps@5.1
 
 jobs:
   validate:
@@ -38,7 +38,7 @@ workflows:
       - hmpps/helm_lint:
           name: helm_lint
           helm_additional_args: ""
-      - hmpps/build_docker:
+      - hmpps/build_multiplatform_docker:
           name: build_docker
           filters:
             branches:
